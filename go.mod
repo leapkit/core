@@ -4,6 +4,7 @@ go 1.21.0
 
 require (
 	github.com/fsnotify/fsnotify v1.6.0
+	github.com/go-chi/chi/v5 v5.0.10
 	github.com/go-playground/form/v4 v4.2.1
 	github.com/gobuffalo/plush/v4 v4.1.19
 	github.com/gofrs/uuid/v5 v5.0.0
