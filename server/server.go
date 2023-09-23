@@ -11,7 +11,7 @@ type Instance struct {
 	*chi.Mux
 
 	name string
-	port int
+	port string
 }
 
 func (r *Instance) Start() error {
@@ -25,7 +25,7 @@ func New(name string, options ...Option) *Instance {
 	r := &Instance{
 		Mux:  chi.NewRouter(),
 		name: name,
-		port: 3000,
+		port: "3000",
 	}
 
 	for _, v := range options {
