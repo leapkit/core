@@ -10,6 +10,7 @@ var (
 	conn *sqlx.DB
 	cmux sync.Mutex
 
+	//DriverName defaults to postgres
 	driverName = "postgres"
 )
 
