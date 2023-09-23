@@ -16,7 +16,7 @@ type Instance struct {
 
 func (r *Instance) Start() error {
 	fmt.Printf("[info] Starting %v server on port %v\n", r.name, r.port)
-	return http.ListenAndServe(fmt.Sprintf(":%v", r.port), r)
+	return http.ListenAndServe(fmt.Sprintf("0.0.0.0:%v", r.port), r)
 }
 
 // New sets up and returns a new HTTP server with routes mounted
