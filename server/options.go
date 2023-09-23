@@ -27,3 +27,9 @@ func WithRoutesFn(routesFn func(*Instance)) Option {
 		routesFn(s)
 	}
 }
+
+func WithPort(port int) Option {
+	return func(s *Instance) {
+		s.port = port
+	}
+}
