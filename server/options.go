@@ -33,3 +33,9 @@ func WithPort(port string) Option {
 		s.port = port
 	}
 }
+
+func WithHost(host string) Option {
+	return func(s *Instance) {
+		s.host = host
+	}
+}
