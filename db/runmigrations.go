@@ -1,7 +1,6 @@
 package db
 
 import (
-	"context"
 	"database/sql"
 	"embed"
 	"errors"
@@ -54,24 +53,14 @@ func RunMigrations(fs embed.FS, conn *sqlx.DB) error {
 			return fmt.Errorf("error opening migration file: %w", err)
 		}
 
-		tx, err := conn.BeginTx(context.Background(), nil)
-		if err != nil {
-			return fmt.Errorf("error beginning transaction: %w", err)
-		}
-
-		_, err = tx.Exec(string(content))
+		_, err = conn.Exec(string(content))
 		if err != nil {
 			return fmt.Errorf("error executing migration: %w", err)
 		}
 
-		_, err = tx.Exec("INSERT INTO schema_migrations (timestamp) VALUES ($1)", timestamp)
+		_, err = conn.Exec("INSERT INTO schema_migrations (timestamp) VALUES ($1)", timestamp)
 		if err != nil {
 			return fmt.Errorf("error inserting migration into schema_migrations: %w", err)
-		}
-
-		err = tx.Commit()
-		if err != nil {
-			return fmt.Errorf("error committing transaction: %w", err)
 		}
 
 		fmt.Println("✅ Migration complete:", v.Name())
