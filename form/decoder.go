@@ -39,5 +39,5 @@ func (d *decoder) parseForm(r *http.Request) error {
 }
 
 func (d *decoder) RegisterCustomTypeFunc(fn form.DecodeCustomTypeFunc, types ...interface{}) {
-	d.RegisterCustomTypeFunc(fn, types...)
+	d.Decoder.RegisterCustomTypeFunc(fn, types)
 }
