@@ -5,7 +5,6 @@ import (
 	"embed"
 	"errors"
 	"fmt"
-	"path"
 	"regexp"
 
 	"github.com/jmoiron/sqlx"
@@ -17,7 +16,7 @@ var (
 )
 
 func RunMigrations(fs embed.FS, conn *sqlx.DB) error {
-	dir, err := fs.ReadDir("migrations")
+	dir, err := fs.ReadDir(".")
 	if err != nil {
 		return fmt.Errorf("error reading migrations directory: %w", err)
 	}
@@ -48,7 +47,7 @@ func RunMigrations(fs embed.FS, conn *sqlx.DB) error {
 			return err
 		}
 
-		content, err := fs.ReadFile(path.Join("migrations", v.Name()))
+		content, err := fs.ReadFile(v.Name())
 		if err != nil {
 			return fmt.Errorf("error opening migration file: %w", err)
 		}

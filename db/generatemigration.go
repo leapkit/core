@@ -26,7 +26,7 @@ func GenerateMigration(name string) error {
 		return fmt.Errorf("error parsing migrations template: %w", err)
 	}
 
-	fname := filepath.Join("postgres", "migrations", m.Filename())
+	fname := filepath.Join("internal", "migrations", m.Filename())
 	f, err := os.Create(fname)
 	if err != nil {
 		return fmt.Errorf("error creating migration file: %w", err)
