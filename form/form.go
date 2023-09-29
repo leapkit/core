@@ -1,7 +1,6 @@
 package form
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -46,9 +45,5 @@ func Decode(r *http.Request, dst interface{}) error {
 	}
 
 	err = decoder.Decode(dst, r.Form)
-	if err != nil {
-		fmt.Println(err)
-	}
-
 	return err
 }
