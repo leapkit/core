@@ -2,45 +2,45 @@ package form
 
 import (
 	"fmt"
-	"time"
+	"net/http"
+	"strings"
 
 	"github.com/go-playground/form/v4"
 )
 
 // use a single instance of Decoder, it caches struct info
 var (
-	defaultDecoder = newDecoder()
-
-	Decode = defaultDecoder.decode
-
-	// RegisterTypeDecoder allows to define how certain types will
-	// be decoded from string values.
-	RegisterTypeDecoder = defaultDecoder.RegisterCustomTypeFunc
+	decoder = form.NewDecoder()
 )
 
-func newDecoder() *decoder {
-	dec := &decoder{
-		form.NewDecoder(),
+func RegisterCustomTypeFunc(fn form.DecodeCustomTypeFunc, kind interface{}) {
+	decoder.RegisterCustomTypeFunc(fn, kind)
+}
+
+func Decode(r *http.Request, dst interface{}) error {
+	//MultipartForm
+	if strings.Contains(r.Header.Get("Content-Type"), "multipart/form-data") {
+		if err := r.ParseMultipartForm(32 << 20); err != nil {
+			return err
+		}
+
+		return nil
 	}
 
-	dec.RegisterCustomTypeFunc(func(vals []string) (interface{}, error) {
-		formats := []string{
-			"2006-01-02",
-			"Jan 2, 2006",
-			"15:04",
-		}
+	err := r.ParseForm()
+	if err != nil {
+		return err
+	}
 
-		for _, format := range formats {
-			t, err := time.Parse(format, vals[0])
-			if err != nil {
-				continue
-			}
+	data := r.Form
+	if len(data) == 0 {
+		r.Form = r.URL.Query()
+	}
 
-			return t, nil
-		}
+	err = decoder.Decode(dst, r.Form)
+	if err != nil {
+		fmt.Println(err)
+	}
 
-		return nil, fmt.Errorf("could not decode input %v", vals[0])
-	}, time.Time{})
-
-	return dec
+	return err
 }
