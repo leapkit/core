@@ -27,7 +27,8 @@ func RegisterCustomTypeFunc(fn form.DecodeCustomTypeFunc, kind interface{}) {
 func Decode(r *http.Request, dst interface{}) error {
 	//MultipartForm
 	if strings.Contains(r.Header.Get("Content-Type"), "multipart/form-data") {
-		if err := r.ParseMultipartForm(32 << 20); err != nil {
+		err := r.ParseMultipartForm(32 << 20)
+		if err != nil {
 			return err
 		}
 

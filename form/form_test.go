@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/leapkit/core/form"
-	// "github.com/leapkit/core/form"
 )
 
 func TestRegisterCustomDecoder(t *testing.T) {
