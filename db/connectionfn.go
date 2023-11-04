@@ -28,7 +28,7 @@ func ConnectionFn(url string, opts ...connectionOption) ConnFn {
 		cmux.Lock()
 		defer cmux.Unlock()
 
-		if conn != nil {
+		if conn != nil && conn.Ping() == nil {
 			return conn, nil
 		}
 
