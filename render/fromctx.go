@@ -4,7 +4,18 @@ import (
 	"context"
 )
 
-// FromCtx returns the render engine from the context.
+// FromCtx returns the render engine from the context
+// when its called it also adds any value in the valuer
+// into the page, this is useful for the middlewares such as
+// session to add values to the page.
 func FromCtx(ctx context.Context) *Page {
-	return ctx.Value("renderer").(*Page)
+	page := ctx.Value("renderer").(*Page)
+
+	// Setting values from the valuer in the page
+	vlr := ctx.Value("valuer").(interface{ Values() map[string]any })
+	for k, v := range vlr.Values() {
+		page.Set(k, v)
+	}
+
+	return page
 }
