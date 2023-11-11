@@ -2,20 +2,20 @@ package render
 
 import (
 	"fmt"
+	"io"
 	"io/fs"
-	"io/ioutil"
 	"net/http"
 	"strings"
 
 	"github.com/leapkit/core/internal/plush"
 )
 
-var defaultLayout = "layouts/application.html"
-
 func (e *Engine) HTML(w http.ResponseWriter) *Page {
 	p := &Page{
 		fs:     e.templates,
 		writer: w,
+
+		defaultLayout: e.defaultLayout,
 	}
 
 	ctx := plush.NewContext()
@@ -40,6 +40,8 @@ type Page struct {
 	context *plush.Context
 	writer  http.ResponseWriter
 	fs      fs.FS
+
+	defaultLayout string
 }
 
 func (p *Page) Set(key string, value any) {
@@ -62,7 +64,7 @@ func (p *Page) Render(page string) error {
 		return err
 	}
 
-	layout, err := p.open(defaultLayout)
+	layout, err := p.open(p.defaultLayout)
 	if err != nil {
 		return fmt.Errorf("could not read file: %w", err)
 	}
@@ -137,7 +139,7 @@ func (p *Page) open(name string) (string, error) {
 		return "", fmt.Errorf("could not read file: %w", err)
 	}
 
-	html, err := ioutil.ReadAll(px)
+	html, err := io.ReadAll(px)
 	if err != nil {
 		return "", fmt.Errorf("could not read file: %w", err)
 	}

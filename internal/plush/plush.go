@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"io/ioutil"
 	"sync"
 
 	"github.com/leapkit/core/internal/plush/hctx"
@@ -66,7 +65,7 @@ func Render(input string, ctx hctx.Context) (string, error) {
 }
 
 func RenderR(input io.Reader, ctx hctx.Context) (string, error) {
-	b, err := ioutil.ReadAll(input)
+	b, err := io.ReadAll(input)
 	if err != nil {
 		return "", err
 	}
