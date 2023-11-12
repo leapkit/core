@@ -12,7 +12,11 @@ func FromCtx(ctx context.Context) *Page {
 	page := ctx.Value("renderer").(*Page)
 
 	// Setting values from the valuer in the page
-	vlr := ctx.Value("valuer").(interface{ Values() map[string]any })
+	vlr, ok := ctx.Value("valuer").(interface{ Values() map[string]any })
+	if !ok {
+		return page
+	}
+
 	for k, v := range vlr.Values() {
 		page.Set(k, v)
 	}
