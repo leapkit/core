@@ -6,6 +6,7 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/go-chi/chi/v5 v5.0.10
 	github.com/go-playground/form/v4 v4.2.1
+	github.com/gobuffalo/flect v0.3.0
 	github.com/gobuffalo/tags/v3 v3.1.4
 	github.com/gofrs/uuid/v5 v5.0.0
 	github.com/gorilla/sessions v1.2.1

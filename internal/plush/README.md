@@ -296,7 +296,7 @@ fmt.Print(s)
 
 ## Helpers
 
-For a full list, and documentation of, all the Helpers included in Plush, see [`github.com/gobuffalo/helpers`](https://godoc.org/github.com/gobuffalo/helpers).
+For a full list, and documentation of, all the Helpers included in Plush, see [`github.com/leapkit/core/render/helpers`](https://godoc.org/github.com/leapkit/core/render/helpers).
 
 ### Custom Helpers
 

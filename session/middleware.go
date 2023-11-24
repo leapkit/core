@@ -3,6 +3,7 @@ package session
 import (
 	"context"
 	"encoding/gob"
+	"fmt"
 	"net/http"
 
 	"github.com/gofrs/uuid/v5"
@@ -41,14 +42,19 @@ func Middleware(secret, name string, options ...Option) func(http.Handler) http.
 			}
 
 			type valueSetter interface {
-				Set(key, value interface{})
+				Set(key string, value interface{})
 			}
 
 			// Look for a valuer in the context and set the values for flash
 			// and session so that they can be used in other components of the request.
-			if vlr, ok := r.Context().Value("valuer").(valueSetter); ok {
+			vlr, ok := r.Context().Value("valuer").(valueSetter)
+			if ok {
 				vlr.Set("flash", flashHelper(session))
 				vlr.Set("session", func() *sessions.Session { return session })
+			}
+
+			if !ok {
+				fmt.Println("no valuer in context")
 			}
 
 			next.ServeHTTP(w, r)
