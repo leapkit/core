@@ -9,6 +9,9 @@ import (
 	"github.com/leapkit/core/render/plush/ast"
 )
 
+// Making sure that the interface is implemented
+var _ hctx.HelperContext = &HelperContext{}
+
 // Helpers contains all of the default helpers for
 // These will be available to all templates. You should add
 // any custom global helpers to this list.
@@ -18,13 +21,7 @@ var Helpers = HelperMap{
 
 func init() {
 	Helpers.Add("partial", PartialHelper)
-	// Helpers.AddMany(helpers.ALL())
-	// Helpers.Add(forms.FormKey, bootstrap.Form)
-	// Helpers.Add(forms.FormForKey, bootstrap.FormFor)
-	// Helpers.Add("form_for", bootstrap.FormFor)
 }
-
-var _ hctx.HelperContext = &HelperContext{}
 
 // HelperContext is an optional last argument to helpers
 // that provides the current context of the call, and access
