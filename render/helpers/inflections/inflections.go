@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/gobuffalo/flect"
-	"github.com/leapkit/core/internal/plush/hctx"
+	"github.com/leapkit/core/render/hctx"
 )
 
 // Keys to be used in templates for the functions in this package.

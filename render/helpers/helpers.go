@@ -1,7 +1,7 @@
 package helpers
 
 import (
-	"github.com/leapkit/core/internal/plush/hctx"
+	"github.com/leapkit/core/render/hctx"
 	"github.com/leapkit/core/render/helpers/content"
 	"github.com/leapkit/core/render/helpers/debug"
 	"github.com/leapkit/core/render/helpers/encoders"

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/leapkit/core/internal/plush/hctx"
+	"github.com/leapkit/core/render/hctx"
 	"github.com/leapkit/core/render/helpers/helptest"
 	"github.com/stretchr/testify/require"
 )

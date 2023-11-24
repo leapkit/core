@@ -1,6 +1,6 @@
 package content
 
-import "github.com/leapkit/core/internal/plush/hctx"
+import "github.com/leapkit/core/render/hctx"
 
 // WithDefault returns the key if exists, otherwise it returns
 // defaultValue passed.

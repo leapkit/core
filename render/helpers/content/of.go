@@ -4,7 +4,7 @@ import (
 	"errors"
 	"html/template"
 
-	"github.com/leapkit/core/internal/plush/hctx"
+	"github.com/leapkit/core/render/hctx"
 )
 
 // ContentOf retrieves a stored block for templating and renders it.
