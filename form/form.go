@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/go-playground/form/v4"
+	"github.com/gofrs/uuid/v5"
 )
 
 // use a single instance of Decoder, it caches struct info
@@ -13,6 +14,13 @@ var (
 	// the underlying library.
 	decoder = form.NewDecoder()
 )
+
+func init() {
+	// Register custom and common type decoder
+	// functions.
+	decoder.RegisterCustomTypeFunc(DecodeUUID, uuid.UUID{})
+	decoder.RegisterCustomTypeFunc(DecodeUUIDSlice, []uuid.UUID{})
+}
 
 // RegisterCustomTypeFunc registers a custom type decoder func for a type.
 // This is useful when you want to use a custom type or a type from an external
