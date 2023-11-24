@@ -22,8 +22,13 @@ var InCtx = Middleware
 // Middleware that injects the session into the request context
 // and also takes care of saving the session when the response is written
 // to the client by wrapping the response writer.
-func Middleware(secret, name string) func(http.Handler) http.Handler {
+func Middleware(secret, name string, options ...Option) func(http.Handler) http.Handler {
 	store := sessions.NewCookieStore([]byte(secret))
+
+	// Run the options on the store
+	for _, option := range options {
+		option(store)
+	}
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
