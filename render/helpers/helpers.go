@@ -7,6 +7,7 @@ import (
 	"github.com/leapkit/core/render/helpers/encoders"
 	"github.com/leapkit/core/render/helpers/env"
 	"github.com/leapkit/core/render/helpers/escapes"
+	"github.com/leapkit/core/render/helpers/forms"
 	"github.com/leapkit/core/render/helpers/inflections"
 	"github.com/leapkit/core/render/helpers/iterators"
 	"github.com/leapkit/core/render/helpers/meta"
@@ -25,6 +26,7 @@ var base = []hctx.Map{
 	meta.New(),
 	paths.New(),
 	text.New(),
+	forms.New(),
 }
 
 var ALL = func() hctx.Map {
