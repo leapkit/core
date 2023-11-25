@@ -1,7 +1,5 @@
 package render
 
-import "html/template"
-
 type Option func(*Engine)
 
 // WithDefaultLayout sets the default layout for the engine
@@ -15,7 +13,7 @@ func WithDefaultLayout(layout string) Option {
 
 // WithHelpers sets the helpers for the engine these helpers will be
 // available in all templates rendered by this engine.
-func WithHelpers(hps template.FuncMap) Option {
+func WithHelpers(hps map[string]any) Option {
 	return func(e *Engine) {
 		e.helpers = hps
 	}

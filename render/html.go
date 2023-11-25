@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/leapkit/core/render/plush"
+	"github.com/leapkit/core/internal/plush"
 )
 
 func (e *Engine) HTML(w http.ResponseWriter) *Page {
