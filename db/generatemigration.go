@@ -15,6 +15,7 @@ var (
 	migrationTemplate string
 )
 
+// GenerateMigration in internal/app/database/migrations/<timestamp>_<name>.go
 func GenerateMigration(name string) error {
 	m := migration{
 		Name:      name,
@@ -26,7 +27,7 @@ func GenerateMigration(name string) error {
 		return fmt.Errorf("error parsing migrations template: %w", err)
 	}
 
-	fname := filepath.Join("internal", "migrations", m.Filename())
+	fname := filepath.Join("internal", "app", "database", "migrations", m.Filename())
 	f, err := os.Create(fname)
 	if err != nil {
 		return fmt.Errorf("error creating migration file: %w", err)
