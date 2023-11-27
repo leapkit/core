@@ -6,7 +6,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/leapkit/core/internal/hctx"
+	"github.com/leapkit/core/hctx"
 )
 
 // DefaultTimeFormat is the default way of formatting a time.Time type.

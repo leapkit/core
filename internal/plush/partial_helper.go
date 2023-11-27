@@ -46,7 +46,8 @@ func PartialHelper(name string, data map[string]interface{}, help HelperContext)
 		return PartialHelper(
 			layout,
 			map[string]interface{}{"yield": template.HTML(part)},
-			help)
+			help,
+		)
 	}
 
 	return template.HTML(part), err

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leapkit/core/internal/hctx"
+	"github.com/leapkit/core/hctx"
 	"github.com/leapkit/core/internal/plush"
 	"github.com/stretchr/testify/require"
 )

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/leapkit/core/internal/hctx"
+	"github.com/leapkit/core/hctx"
 	"github.com/leapkit/core/internal/helpers/helptest"
 	"github.com/stretchr/testify/require"
 )

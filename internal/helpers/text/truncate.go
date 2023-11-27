@@ -1,6 +1,6 @@
 package text
 
-import "github.com/leapkit/core/internal/hctx"
+import "github.com/leapkit/core/hctx"
 
 // Truncate will try to return a string that is no longer
 // than `size`, which defaults to 50. If given

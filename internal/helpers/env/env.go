@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/leapkit/core/internal/hctx"
+	"github.com/leapkit/core/hctx"
 )
 
 // Keys to be used in templates for the functions in this package.
