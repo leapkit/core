@@ -8,7 +8,7 @@ import (
 // first copy the files and then generates a public.go file
 // with the assets embedded through a go:embed directive.
 func Embed(src, dst string) error {
-	// Remove the destination folder
+	// Remove the destination folder before copying the files
 	err := os.RemoveAll(dst)
 	if err != nil {
 		return err
