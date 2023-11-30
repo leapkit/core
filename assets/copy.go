@@ -4,14 +4,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
+// Todo: configurable exceptions
 func copyFiles(source, destination string) error {
-	var exceptions = []string{
-		// Todo: configurable exceptions
-		"assets/application.css",
-	}
 
 	err := filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -26,12 +22,6 @@ func copyFiles(source, destination string) error {
 		relativePath, err := filepath.Rel(source, path)
 		if err != nil {
 			return err
-		}
-
-		for _, v := range exceptions {
-			if strings.HasSuffix(relativePath, v) {
-				return nil
-			}
 		}
 
 		// Create the destination folder if it doesn't exist
