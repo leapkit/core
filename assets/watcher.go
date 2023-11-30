@@ -18,26 +18,26 @@ import (
 // copied to the destination folder, and then the watcher
 // is started.
 func Watcher(src, dest string) func() {
-	err := Embed(src, dest)
-	if err != nil {
-		log.Println(err)
-	}
-
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		panic(fmt.Errorf("error creating watcher: %w", err))
-	}
-
-	// Add all folders within the assets folder to the watcher.
-	err = filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
-		return watcher.Add(path)
-	})
-
-	if err != nil {
-		panic(fmt.Errorf("error adding files to watcher: %w", err))
-	}
-
 	return func() {
+		err := Embed(src, dest)
+		if err != nil {
+			log.Println(err)
+		}
+
+		watcher, err := fsnotify.NewWatcher()
+		if err != nil {
+			panic(fmt.Errorf("error creating watcher: %w", err))
+		}
+
+		// Add all folders within the assets folder to the watcher.
+		err = filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+			return watcher.Add(path)
+		})
+
+		if err != nil {
+			panic(fmt.Errorf("error adding files to watcher: %w", err))
+		}
+
 		go func() {
 			for {
 				select {
@@ -65,7 +65,7 @@ func Watcher(src, dest string) func() {
 						return
 					}
 
-					log.Println("]error:", err)
+					log.Println("error:", err)
 				}
 			}
 		}()
