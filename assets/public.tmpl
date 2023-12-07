@@ -5,8 +5,8 @@ package public
 
 import (
 	"embed"
-	"markito/internal/app/config"
-
+	
+	"github.com/leapkit/core/envor"
 	"github.com/leapkit/core/mdfs"
 )
 
@@ -19,6 +19,9 @@ var (
 	Files = mdfs.New(
 		public,
 		"public",
-		config.Environment,
+		
+		// The environment is used to determine if it will used
+		// the embedded folder or the actual folder.
+		envor.Get("GO_ENV", "development"),
 	)
 )

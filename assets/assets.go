@@ -2,6 +2,7 @@ package assets
 
 import (
 	_ "embed"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,7 +28,7 @@ func generateEmbed(publicFolder string) error {
 			return err
 		}
 
-		embs = append(embs, filepath.ToSlash(relativePath))
+		embs = append(embs, fmt.Sprintf("`%v`", filepath.ToSlash(relativePath)))
 		return nil
 	})
 
