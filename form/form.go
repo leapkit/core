@@ -39,13 +39,11 @@ func Decode(r *http.Request, dst interface{}) error {
 		if err != nil {
 			return err
 		}
-
-		return nil
-	}
-
-	err := r.ParseForm()
-	if err != nil {
-		return err
+	} else {
+		err := r.ParseForm()
+		if err != nil {
+			return err
+		}
 	}
 
 	data := r.Form
@@ -53,6 +51,6 @@ func Decode(r *http.Request, dst interface{}) error {
 		r.Form = r.URL.Query()
 	}
 
-	err = decoder.Decode(dst, r.Form)
+	err := decoder.Decode(dst, r.Form)
 	return err
 }
