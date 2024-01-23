@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	//go:embed schemamigrations.sql
+	//go:embed schema_migrations.sql
 	migrationsTableStatement string
 )
 
