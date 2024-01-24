@@ -19,6 +19,9 @@ var (
 // connection string.
 type ConnFn func() (*sqlx.DB, error)
 
+// connectionOptions for the database
+type connectionOption func()
+
 // ConnectionFn is the database connection builder function that
 // will be used by the application based on the driver and
 // connection string. It opens the connection only once
@@ -43,5 +46,13 @@ func ConnectionFn(url string, opts ...connectionOption) ConnFn {
 		}
 
 		return conn, nil
+	}
+}
+
+// WithDriver allows to specify the driver to use driver defaults to
+// postgres.
+func WithDriver(name string) connectionOption {
+	return func() {
+		driverName = name
 	}
 }
