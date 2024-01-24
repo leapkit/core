@@ -1,65 +1,48 @@
 package db
 
 import (
-	"database/sql"
 	"embed"
-	"errors"
 	"fmt"
 	"regexp"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/leapkit/core/db/migrations"
 )
 
-var (
-	//go:embed schema_migrations.sql
-	migrationsTableStatement string
-)
-
+// RunMigrations by checking in the migrations database
+// table, each of the adapters take care of this.
 func RunMigrations(fs embed.FS, conn *sqlx.DB) error {
 	dir, err := fs.ReadDir(".")
 	if err != nil {
 		return fmt.Errorf("error reading migrations directory: %w", err)
 	}
 
-	_, err = conn.Exec(migrationsTableStatement)
+	migrator := migratorFor(conn).(migrations.Migrator)
+	err = migrator.Setup()
 	if err != nil {
-		return fmt.Errorf("error creating migrations table: %w", err)
+		return fmt.Errorf("error setting up migrations: %w", err)
 	}
 
+	exp := regexp.MustCompile("(\\d{14})_(.*).sql")
 	for _, v := range dir {
 		if v.IsDir() {
 			continue
 		}
 
-		exp := regexp.MustCompile("(\\d{14})_(.*).sql")
 		matches := exp.FindStringSubmatch(v.Name())
 		if len(matches) != 3 {
 			continue
 		}
 
 		timestamp := matches[1]
-		err := conn.Get(&timestamp, "SELECT * FROM schema_migrations WHERE timestamp = $1", timestamp)
-		if err == nil {
-			continue
-		}
-
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
-			return err
-		}
-
 		content, err := fs.ReadFile(v.Name())
 		if err != nil {
 			return fmt.Errorf("error opening migration file: %w", err)
 		}
 
-		_, err = conn.Exec(string(content))
+		err = migrator.Run(timestamp, string(content))
 		if err != nil {
-			return fmt.Errorf("error executing migration: %w", err)
-		}
-
-		_, err = conn.Exec("INSERT INTO schema_migrations (timestamp) VALUES ($1)", timestamp)
-		if err != nil {
-			return fmt.Errorf("error inserting migration into schema_migrations: %w", err)
+			return fmt.Errorf("error running migration: %w", err)
 		}
 
 		fmt.Println("✅ Migration complete:", v.Name())

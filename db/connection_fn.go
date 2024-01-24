@@ -45,11 +45,3 @@ func ConnectionFn(url string, opts ...connectionOption) ConnFn {
 		return conn, nil
 	}
 }
-
-type connectionOption func()
-
-func WithDriver(name string) connectionOption {
-	return func() {
-		driverName = name
-	}
-}
