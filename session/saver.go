@@ -1,6 +1,9 @@
 package session
 
 import (
+	"bufio"
+	"errors"
+	"net"
 	"net/http"
 	"sync"
 
@@ -41,4 +44,13 @@ func (s *saver) Write(b []byte) (int, error) {
 	s.store.Save(s.req, s.w)
 	n, err := s.w.Write(b)
 	return n, err
+}
+
+func (s *saver) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	h, ok := s.w.(http.Hijacker)
+	if !ok {
+		return nil, nil, errors.New("hijack not supported")
+	}
+
+	return h.Hijack()
 }

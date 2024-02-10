@@ -34,7 +34,7 @@ func GenerateMigration(name string, options ...migrations.Option) error {
 	migrations.Apply(options...)
 
 	m := migrations.New(name)
-	t, err := template.New("migration").Parse(migrations.Folder())
+	t, err := template.New("migration").Parse(migrations.Template())
 	if err != nil {
 		return fmt.Errorf("error parsing migrations template: %w", err)
 	}
