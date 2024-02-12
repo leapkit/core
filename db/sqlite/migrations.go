@@ -32,7 +32,7 @@ func (a *adapter) Run(timestamp, sql string) error {
 			return fmt.Errorf("error running migration: %w", err)
 		}
 
-		fmt.Printf("✅ Migration %v applied", timestamp)
+		fmt.Printf("✅ Migration %v applied\n", timestamp)
 	}
 
 	return nil
