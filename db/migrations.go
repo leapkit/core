@@ -90,8 +90,6 @@ func RunMigrations(fs embed.FS, conn *sqlx.DB) error {
 		if err != nil {
 			return fmt.Errorf("error running migration: %w", err)
 		}
-
-		fmt.Println("✅ Migration complete:", v.Name())
 	}
 
 	return nil
