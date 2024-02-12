@@ -18,7 +18,6 @@ func runManager(changed chan bool) {
 		cmd.Args = append(cmd.Args, "-o", "bin/app", path)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-		cmd.Stdin = os.Stdin
 
 		err := cmd.Run()
 		if err != nil {
@@ -30,6 +29,7 @@ func runManager(changed chan bool) {
 		cmd = exec.CommandContext(ctx, "bin/app")
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
+		cmd.Stdin = os.Stdin
 		cmd.Run()
 	}
 
