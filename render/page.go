@@ -10,32 +10,6 @@ import (
 	"github.com/leapkit/core/internal/plush"
 )
 
-func (e *Engine) HTML(w http.ResponseWriter) *Page {
-	p := &Page{
-		fs:     e.templates,
-		writer: w,
-
-		defaultLayout: e.defaultLayout,
-	}
-
-	ctx := plush.NewContext()
-	for k, v := range e.values {
-		ctx.Set(k, v)
-	}
-
-	for k, v := range e.helpers {
-		ctx.Set(k, v)
-	}
-
-	ctx.Set("partialFeeder", func(name string) (string, error) {
-		return p.open(name)
-	})
-
-	p.context = ctx
-
-	return p
-}
-
 type Page struct {
 	context *plush.Context
 	writer  http.ResponseWriter
