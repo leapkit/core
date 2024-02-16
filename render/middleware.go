@@ -20,6 +20,7 @@ func Middleware(templates fs.FS, options ...Option) func(http.Handler) http.Hand
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := context.WithValue(r.Context(), "renderer", engine.HTML(w))
+			ctx = context.WithValue(ctx, "renderEngine", engine)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})

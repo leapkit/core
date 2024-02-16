@@ -23,3 +23,10 @@ func FromCtx(ctx context.Context) *Page {
 
 	return page
 }
+
+// FromCtx returns the render engine from the context,
+// it assumes the render render engine has been set
+// by the render middleware.
+func EngineFromCtx(ctx context.Context) *Engine {
+	return ctx.Value("renderEngine").(*Engine)
+}
