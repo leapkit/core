@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"net/http"
 	"strings"
 
 	"github.com/leapkit/core/internal/plush"
@@ -12,7 +11,7 @@ import (
 
 type Page struct {
 	context *plush.Context
-	writer  http.ResponseWriter
+	writer  io.Writer
 	fs      fs.FS
 
 	defaultLayout string

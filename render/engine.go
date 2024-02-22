@@ -4,7 +4,6 @@ import (
 	"html/template"
 	"io"
 	"io/fs"
-	"net/http"
 	"sync"
 
 	"github.com/leapkit/core/internal/plush"
@@ -52,7 +51,7 @@ func (e *Engine) SetHelper(key string, value any) {
 	e.helpers[key] = value
 }
 
-func (e *Engine) HTML(w http.ResponseWriter) *Page {
+func (e *Engine) HTML(w io.Writer) *Page {
 	p := &Page{
 		fs:     e.templates,
 		writer: w,
