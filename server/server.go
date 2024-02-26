@@ -1,56 +1,48 @@
 package server
 
 import (
-	"fmt"
-	"io/fs"
+	"log/slog"
 	"net/http"
-	"strings"
-
-	"github.com/go-chi/chi/v5"
 )
 
-// Instance of the server, it contains a router and its basic options,
-// this instance is used to apply options to the server.
-type Instance struct {
-	*chi.Mux
+// Rood routeGroup is a group of routes with a common prefix and middleware
+// it also has a host and port as well as a Start method as it is the root of the server
+// that should be executed for all the handlers in the group.
+type Root struct {
+	*HandlerGroup
 
-	name string
 	host string
 	port string
 }
 
-func (r *Instance) Start() error {
-	host := fmt.Sprintf("%v:%v", r.host, r.port)
-	fmt.Printf("[info] Starting %v server on port %v\n", r.name, host)
+// New creates a new server with the given options and default middleware.
+func New(options ...Option) *Root {
+	ss := &Root{
+		HandlerGroup: &HandlerGroup{
+			prefix:     "",
+			mux:        http.NewServeMux(),
+			middleware: []Middleware{},
+		},
 
-	return http.ListenAndServe(host, r)
+		host: "0.0.0.0",
+		port: "3000",
+	}
+
+	ss.Use(logger)
+	ss.Use(recoverer)
+	ss.Use(requestID)
+	ss.Use(setValuer)
+
+	for _, option := range options {
+		option(ss)
+	}
+
+	return ss
 }
 
-func (r *Instance) Folder(path string, dir fs.FS) {
-	if !strings.HasSuffix(path, "/") {
-		path += "/"
-	}
+func (s Root) Start() error {
+	slog.Info("> Starting server on port " + s.port)
 
-	// mount the folder at the given path with the given prefix
-	r.Handle(path+"*", http.StripPrefix(path, http.FileServer(http.FS(dir))))
-}
-
-// New sets up and returns a new HTTP server with routes mounted
-// for each of the different features in this application. It also
-// sets up the default middleware for the server.
-func New(name string, options ...Option) *Instance {
-	r := &Instance{
-		Mux:  chi.NewRouter(),
-		name: name,
-		host: "0.0.0.0", //default host
-		port: "3000",    //default port
-	}
-
-	r.Use(setValuer)
-
-	for _, v := range options {
-		v(r)
-	}
-
-	return r
+	fhp := s.host + ":" + s.port
+	return http.ListenAndServe(fhp, s.mux)
 }
