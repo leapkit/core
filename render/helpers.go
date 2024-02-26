@@ -8,10 +8,8 @@ import (
 	"github.com/leapkit/core/internal/helpers/env"
 	"github.com/leapkit/core/internal/helpers/escapes"
 	"github.com/leapkit/core/internal/helpers/forms"
-	"github.com/leapkit/core/internal/helpers/inflections"
 	"github.com/leapkit/core/internal/helpers/iterators"
 	"github.com/leapkit/core/internal/helpers/meta"
-	"github.com/leapkit/core/internal/helpers/paths"
 	"github.com/leapkit/core/internal/helpers/text"
 )
 
@@ -23,10 +21,8 @@ var AllHelpers = hctx.Merge(
 	encoders.New(),
 	env.New(),
 	escapes.New(),
-	inflections.New(),
 	iterators.New(),
 	meta.New(),
-	paths.New(),
 	text.New(),
 	forms.New(),
 )
