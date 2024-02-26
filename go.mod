@@ -9,7 +9,6 @@ require (
 	github.com/gofrs/uuid/v5 v5.0.0
 	github.com/gorilla/sessions v1.2.1
 	github.com/jmoiron/sqlx v1.3.5
-	github.com/joho/godotenv v1.5.1
 	github.com/mattn/go-sqlite3 v1.14.15
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/sync v0.3.0
