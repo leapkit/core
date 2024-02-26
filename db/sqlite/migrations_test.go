@@ -1,10 +1,11 @@
-package sqlite
+package sqlite_test
 
 import (
 	"path/filepath"
 	"testing"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/leapkit/core/db/sqlite"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -15,7 +16,7 @@ func TestSetup(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	adapter := New(conn)
+	adapter := sqlite.New(conn)
 	err = adapter.Setup()
 	if err != nil {
 		t.Fatal(err)
@@ -40,7 +41,7 @@ func TestRun(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		adapter := New(conn)
+		adapter := sqlite.New(conn)
 		err = adapter.Setup()
 		if err != nil {
 			t.Fatal(err)
@@ -65,7 +66,7 @@ func TestRun(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		adapter := New(conn)
+		adapter := sqlite.New(conn)
 		err = adapter.Setup()
 		if err != nil {
 			t.Fatal(err)
