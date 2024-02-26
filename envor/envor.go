@@ -10,10 +10,14 @@ import (
 // oncer for the config loading
 var loadOnce sync.Once
 
+func init() {
+	loadOnce.Do(loadENV)
+}
+
 // envOr returns the value of an environment variable if
 // it exists, otherwise it returns the default value
 func Get(name, def string) string {
-	loadOnce.Do(loadENV)
+
 	if value := os.Getenv(name); value != "" {
 		return value
 	}
@@ -31,7 +35,6 @@ func loadENV() {
 	}
 
 	scanner := bufio.NewScanner(file)
-	// optionally, resize scanner's capacity for lines over 64K, see next example
 	for scanner.Scan() {
 		line := scanner.Text()
 		if line == "" {
