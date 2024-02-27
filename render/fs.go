@@ -31,6 +31,7 @@ func TemplateFS(embed fs.FS, dir string) templatesFS {
 	}
 
 	env := envor.Get("GO_ENV", "development")
+
 	return templatesFS{
 		embed: embed,
 		dirFs: os.DirFS(dir),
