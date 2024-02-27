@@ -7,7 +7,7 @@ import (
 	"github.com/leapkit/core/assets"
 )
 
-func TestManagerFingerprint(t *testing.T) {
+func TestFingerprint(t *testing.T) {
 	m := assets.NewManager(fstest.MapFS{
 		"public/main.js": {Data: []byte("AAA")},
 	})

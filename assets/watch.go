@@ -68,7 +68,7 @@ func (m *manager) Watch() {
 }
 
 // CopyAll copies all files from the input folder to the output folder.
-func (m manager) CopyAll() error {
+func (m *manager) CopyAll() error {
 
 	// Copy all files files
 	err := filepath.Walk(m.inputFolder, func(path string, info os.FileInfo, err error) error {
