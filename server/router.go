@@ -60,6 +60,7 @@ func (rg *router) Handle(pattern string, handler http.Handler) {
 	}
 
 	pattern = fmt.Sprintf("%s %s", method, path.Join(rg.prefix, route))
+	fmt.Println(">" + pattern)
 	rg.mux.Handle(pattern, handler)
 }
 

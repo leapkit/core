@@ -19,7 +19,7 @@ import (
 // is started.
 func Watcher(src, dest string) func() {
 	return func() {
-		err := Embed(src, dest)
+		err := CopyToPublic(src, dest)
 		if err != nil {
 			log.Println(err)
 		}
@@ -51,7 +51,7 @@ func Watcher(src, dest string) func() {
 						continue
 					}
 
-					err := Embed(src, dest)
+					err := CopyToPublic(src, dest)
 					if err != nil {
 						log.Println(err)
 					}

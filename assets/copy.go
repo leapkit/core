@@ -1,15 +1,15 @@
 package assets
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 )
 
-// Todo: configurable exceptions
-func copyFiles(source, destination string) error {
-
-	err := filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
+func CopyToPublic(src, dst string) error {
+	// Copy all files files
+	err := filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -19,13 +19,13 @@ func copyFiles(source, destination string) error {
 		}
 
 		// Get the relative path of the file
-		relativePath, err := filepath.Rel(source, path)
+		relativePath, err := filepath.Rel(src, path)
 		if err != nil {
 			return err
 		}
 
 		// Create the destination folder if it doesn't exist
-		destFolder := filepath.Join(destination, filepath.Dir(relativePath))
+		destFolder := filepath.Join(dst, filepath.Dir(relativePath))
 		err = os.MkdirAll(destFolder, os.ModePerm)
 		if err != nil {
 			return err
@@ -53,5 +53,9 @@ func copyFiles(source, destination string) error {
 		return nil
 	})
 
-	return err
+	if err != nil {
+		return fmt.Errorf("error copying files: %w", err)
+	}
+
+	return nil
 }
