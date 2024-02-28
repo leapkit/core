@@ -15,6 +15,8 @@ func WithDefaultLayout(layout string) Option {
 // available in all templates rendered by this engine.
 func WithHelpers(hps map[string]any) Option {
 	return func(e *Engine) {
-		e.helpers = hps
+		for k, v := range hps {
+			e.helpers[k] = v
+		}
 	}
 }
