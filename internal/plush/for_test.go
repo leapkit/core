@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/leapkit/core/internal/helpers/iterators"
 	"github.com/leapkit/core/internal/plush"
 	"github.com/stretchr/testify/require"
 )
@@ -43,13 +44,13 @@ func Test_Render_For_Array_Continue(t *testing.T) {
 	input := `<%= for (i,v) in [1, 2, 3,4,5,6,7,8,9,10] {
 		%>Start<%
 		if (v == 1 || v ==3 || v == 5 || v == 7 || v == 9) {
-			
-			
+
+
 			%>Odd<%
 			continue
 		}
 
-		return v   
+		return v
 		} %>`
 	s, err := plush.Render(input, plush.NewContext())
 
@@ -60,13 +61,13 @@ func Test_Render_For_Array_Continue(t *testing.T) {
 func Test_Render_For_Array_WithNoOutput(t *testing.T) {
 	r := require.New(t)
 	input := `<%= for (i,v) in [1, 2, 3,4,5,6,7,8,9,10] {
-	
+
 		if (v == 1 || v == 2 || v ==3 || v == 4|| v == 5 || v == 6 || v == 7 || v == 8 || v == 9 || v == 10) {
 
 			continue
 		}
 
-		return v   
+		return v
 		} %>`
 	s, err := plush.Render(input, plush.NewContext())
 
@@ -79,7 +80,7 @@ func Test_Render_For_Array_WithoutContinue(t *testing.T) {
 	input := `<%= for (i,v) in [1, 2, 3,4,5,6,7,8,9,10] {
 		if (v == 1 || v ==3 || v == 5 || v == 7 || v == 9) {
 		}
-		return v   
+		return v
 		} %>`
 	s, err := plush.Render(input, plush.NewContext())
 
@@ -91,7 +92,7 @@ func Test_Render_For_Array_ContinueNoControl(t *testing.T) {
 	r := require.New(t)
 	input := `<%= for (i,v) in [1, 2, 3,4,5,6,7,8,9,10] {
 		continue
-		return v   
+		return v
 		} %>`
 	s, err := plush.Render(input, plush.NewContext())
 
@@ -104,13 +105,13 @@ func Test_Render_For_Array_Break_String(t *testing.T) {
 	input := `<%= for (i,v) in [1, 2, 3,4,5,6,7,8,9,10] {
 		%>Start<%
 		if (v == 5) {
-			
-			
+
+
 			%>Odd<%
 			break
 		}
 
-		return v   
+		return v
 		} %>`
 	s, err := plush.Render(input, plush.NewContext())
 
@@ -124,7 +125,7 @@ func Test_Render_For_Array_WithBreakFirstValue(t *testing.T) {
 		if (v == 1 || v ==3 || v == 5 || v == 7 || v == 9) {
 			break
 		}
-		return v   
+		return v
 		} %>`
 	s, err := plush.Render(input, plush.NewContext())
 
@@ -139,7 +140,7 @@ func Test_Render_For_Array_WithBreakFirstValueWithReturn(t *testing.T) {
 			%><%=v%><%
 			break
 		}
-		return v   
+		return v
 		} %>`
 	s, err := plush.Render(input, plush.NewContext())
 
@@ -150,7 +151,7 @@ func Test_Render_For_Array_Break(t *testing.T) {
 	r := require.New(t)
 	input := `<%= for (i,v) in [1, 2, 3,4,5,6,7,8,9,10] {
 		break
-		return v   
+		return v
 		} %>`
 	s, err := plush.Render(input, plush.NewContext())
 
@@ -169,7 +170,10 @@ func Test_Render_For_Array_Key_Only(t *testing.T) {
 func Test_Render_For_Func_Range(t *testing.T) {
 	r := require.New(t)
 	input := `<%= for (v) in range(3,5) { %><%=v%><% } %>`
-	s, err := plush.Render(input, plush.NewContext())
+	s, err := plush.Render(input, plush.NewContextWith(map[string]any{
+		"range": iterators.Range,
+	}))
+
 	r.NoError(err)
 	r.Equal("345", s)
 }
@@ -177,7 +181,9 @@ func Test_Render_For_Func_Range(t *testing.T) {
 func Test_Render_For_Func_Between(t *testing.T) {
 	r := require.New(t)
 	input := `<%= for (v) in between(3,6) { %><%=v%><% } %>`
-	s, err := plush.Render(input, plush.NewContext())
+	s, err := plush.Render(input, plush.NewContextWith(map[string]any{
+		"between": iterators.Between,
+	}))
 	r.NoError(err)
 	r.Equal("45", s)
 }
@@ -185,7 +191,9 @@ func Test_Render_For_Func_Between(t *testing.T) {
 func Test_Render_For_Func_Until(t *testing.T) {
 	r := require.New(t)
 	input := `<%= for (v) in until(3) { %><%=v%><% } %>`
-	s, err := plush.Render(input, plush.NewContext())
+	s, err := plush.Render(input, plush.NewContextWith(map[string]any{
+		"until": iterators.Until,
+	}))
 	r.NoError(err)
 	r.Equal("012", s)
 }

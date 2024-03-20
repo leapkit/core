@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/leapkit/core/internal/helpers/text"
 	"github.com/leapkit/core/internal/plush"
 	"github.com/stretchr/testify/require"
 )
@@ -76,6 +77,7 @@ func Test_Return_Exit_With__InfixExpression(t *testing.T) {
 func Test_User_Function_Return(t *testing.T) {
 	r := require.New(t)
 	ctx := plush.NewContext()
+	ctx.Set("truncate", text.Truncate)
 	in := `<%
  	let print = fn(obj) {
  		if (obj.Secret) {

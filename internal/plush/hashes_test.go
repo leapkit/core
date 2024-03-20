@@ -3,6 +3,7 @@ package plush_test
 import (
 	"testing"
 
+	"github.com/leapkit/core/internal/helpers/debug"
 	"github.com/leapkit/core/internal/plush"
 	"github.com/stretchr/testify/require"
 )
@@ -83,6 +84,7 @@ func Test_Render_HashCall_OnAttribute_IntoFunction(t *testing.T) {
 		MyMap: map[string]string{"a": "A"},
 	})
 	ctx.Set("key", "a")
+	ctx.Set("debug", debug.Debug)
 	s, err := plush.Render(input, ctx)
 	r.NoError(err)
 	r.Equal("<pre>A</pre>", s)

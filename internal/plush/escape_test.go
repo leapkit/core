@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"testing"
 
+	"github.com/leapkit/core/internal/helpers/encoders"
 	"github.com/leapkit/core/internal/plush"
 	"github.com/stretchr/testify/require"
 )
@@ -22,6 +23,7 @@ func Test_Render_HTML_Escape(t *testing.T) {
 
 	input := `<%= escapedHTML() %>|<%= unescapedHTML() %>|<%= raw("<b>unsafe</b>") %>`
 	s, err := plush.Render(input, plush.NewContextWith(map[string]interface{}{
+		"raw": encoders.Raw,
 		"escapedHTML": func() string {
 			return "<b>unsafe</b>"
 		},

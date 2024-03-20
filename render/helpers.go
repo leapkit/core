@@ -7,7 +7,6 @@ import (
 	"github.com/leapkit/core/internal/helpers/encoders"
 	"github.com/leapkit/core/internal/helpers/env"
 	"github.com/leapkit/core/internal/helpers/escapes"
-	"github.com/leapkit/core/internal/helpers/forms"
 	"github.com/leapkit/core/internal/helpers/iterators"
 	"github.com/leapkit/core/internal/helpers/meta"
 	"github.com/leapkit/core/internal/helpers/text"
@@ -24,5 +23,4 @@ var AllHelpers = hctx.Merge(
 	iterators.New(),
 	meta.New(),
 	text.New(),
-	forms.New(),
 )
