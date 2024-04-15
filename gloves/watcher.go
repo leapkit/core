@@ -13,7 +13,7 @@ import (
 // is detected through the changed channel.
 func runWatcher(changed chan bool) {
 	// Create new watcher.
-	watcher, err := buildWatcher(config.extensionsToWatch)
+	watcher, err := buildWatcher()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -44,7 +44,7 @@ func runWatcher(changed chan bool) {
 	<-make(chan struct{})
 }
 
-func buildWatcher(extensions []string) (*fsnotify.Watcher, error) {
+func buildWatcher() (*fsnotify.Watcher, error) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return watcher, fmt.Errorf("error creating watcher: %w", err)
