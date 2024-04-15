@@ -2,6 +2,7 @@ package envor
 
 import (
 	"bufio"
+	"io"
 	"os"
 	"strings"
 	"sync"
@@ -34,7 +35,19 @@ func loadENV() {
 		return
 	}
 
-	scanner := bufio.NewScanner(file)
+	for key, value := range parseVars(file) {
+		err := os.Setenv(key, value)
+		if err != nil {
+			continue
+		}
+	}
+}
+
+// parseVars reads the variables from the reader and sets them
+// in the environment.
+func parseVars(r io.Reader) map[string]string {
+	vars := make(map[string]string)
+	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		line := scanner.Text()
 		if line == "" {
@@ -46,7 +59,7 @@ func loadENV() {
 			continue
 		}
 
-		pair := strings.Split(line, "=")
+		pair := strings.SplitN(line, "=", 2)
 		if len(pair) != 2 {
 			continue
 		}
@@ -55,9 +68,8 @@ func loadENV() {
 		value := strings.TrimSpace(pair[1])
 		value = strings.Trim(value, "\"")
 
-		err := os.Setenv(key, value)
-		if err != nil {
-			continue
-		}
+		vars[key] = value
 	}
+
+	return vars
 }
