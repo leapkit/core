@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"net/http"
 )
 
@@ -27,14 +26,6 @@ func New(options ...Option) *mux {
 		host: "0.0.0.0",
 		port: "3000",
 	}
-
-	ss.Use(func(h http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Println(r.URL.Path)
-
-			h.ServeHTTP(w, r)
-		})
-	})
 
 	ss.Use(logger)
 	ss.Use(recoverer)
