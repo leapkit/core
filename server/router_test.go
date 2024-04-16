@@ -68,14 +68,10 @@ func TestRouter(t *testing.T) {
 				t.Errorf("Expected status code %d, got %d", tt.code, res.Code)
 			}
 
-			expectedBody(t, res, tt.body)
+			if res.Body.String() != tt.body {
+				t.Errorf("Expected body %s, got %s", tt.body, res.Body.String())
+			}
 		})
 	}
 
-}
-
-func expectedBody(t *testing.T, res *httptest.ResponseRecorder, expected string) {
-	if res.Body.String() != expected {
-		t.Errorf("Expected body %s, got %s", expected, res.Body.String())
-	}
 }
