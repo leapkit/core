@@ -44,7 +44,7 @@ func TestRouter(t *testing.T) {
 		})
 	})
 
-	test := []struct {
+	testCases := []struct {
 		method string
 		route  string
 		body   string
@@ -58,7 +58,7 @@ func TestRouter(t *testing.T) {
 		{"GET", "/api/docs", "API documentation!", http.StatusOK},
 	}
 
-	for _, tt := range test {
+	for _, tt := range testCases {
 		t.Run(tt.route, func(t *testing.T) {
 			req, _ := http.NewRequest(tt.method, tt.route, nil)
 			res := httptest.NewRecorder()
