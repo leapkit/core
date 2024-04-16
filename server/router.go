@@ -60,6 +60,7 @@ func (rg *router) Handle(pattern string, handler http.Handler) {
 	}
 
 	pattern = fmt.Sprintf("%s %s", method, path.Join(rg.prefix, route))
+	fmt.Printf("Registering handler for %s\n", pattern)
 	rg.mux.Handle(pattern, handler)
 }
 
@@ -83,10 +84,9 @@ func (rg *router) Folder(prefix string, fs fs.FS) {
 func (rg *router) Group(prefix string, rfn func(rg Router)) {
 	group := &router{
 		prefix:     path.Join(rg.prefix, prefix),
-		mux:        http.NewServeMux(),
+		mux:        rg.mux,
 		middleware: rg.middleware,
 	}
 
 	rfn(group)
-	rg.mux.Handle(prefix, group.mux)
 }
