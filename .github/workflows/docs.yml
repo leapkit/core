@@ -22,13 +22,11 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v2
-      - name: Setup Go ${{ matrix.go-version }}
-        uses: actions/setup-go@v4
-
-      - name: install doco
-        run: go install github.com/paganotoni/doco/cmd/doco@latest
-
-      - run: doco build
+      - name: Setup Doco
+        run: >
+          wget https://github.com/paganotoni/doco/releases/latest/download/doco_Linux_x86_64.tar.gz &&
+          tar -xvf doco_Linux_arm64.tar.gz
+      - run: ./doco build
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
