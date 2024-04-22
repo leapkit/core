@@ -8,7 +8,7 @@ keywords: "golange,tooling,kit,leapkit,leap,go"
 index: -1
 favicon: "/assets/favicon.png"
 logo:
-  src: "/assets/logo.png"
+  src: "/assets/logo.svg"
   link: "/"
 
 # announcement:
