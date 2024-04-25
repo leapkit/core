@@ -1,34 +1,19 @@
-package envor
+// envload package loads .env files into the environment. To do it
+// it uses an init function that reads the .env file and sets the
+// variables in the environment.
+package envload
 
 import (
 	"bufio"
 	"io"
 	"os"
 	"strings"
-	"sync"
 )
 
-// oncer for the config loading
-var loadOnce sync.Once
-
+// init reads the .env file and sets the variables in the environment
+// and passes it to the parseVars function, then it set the variables
+// in the environment.
 func init() {
-	loadOnce.Do(loadENV)
-}
-
-// envOr returns the value of an environment variable if
-// it exists, otherwise it returns the default value
-func Get(name, def string) string {
-
-	if value := os.Getenv(name); value != "" {
-		return value
-	}
-
-	return def
-}
-
-// loadEnv loads the .env file into the environment
-// variables it only loads that file.
-func loadENV() {
 	// open .env file
 	file, err := os.Open(".env")
 	if err != nil {

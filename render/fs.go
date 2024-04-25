@@ -1,11 +1,10 @@
 package render
 
 import (
+	"cmp"
 	"io"
 	"io/fs"
 	"os"
-
-	"github.com/leapkit/core/envor"
 )
 
 // templatesFS wraps a directory and an embed templatesFS that are expected to have the same contents.
@@ -30,7 +29,7 @@ func TemplateFS(embed fs.FS, dir string) templatesFS {
 		dir = pwd
 	}
 
-	env := envor.Get("GO_ENV", "development")
+	env := cmp.Or(os.Getenv("GO_ENV"), "development")
 
 	return templatesFS{
 		embed: embed,
