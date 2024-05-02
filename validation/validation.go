@@ -14,14 +14,15 @@ import (
 	"github.com/gofrs/uuid/v5"
 )
 
-// New function process the request form by looking
+// New is the main function in charge of validating the HTTP request form by using the defined rule set.
+// Form fields will be validated only if there is a rule that indicates they must be validated.
 func New(form url.Values, ruleSet ...Rule) map[string][]string {
 	verrs := make(map[string][]string)
 	mutex := new(sync.RWMutex)
 
 	for _, rule := range ruleSet {
 		mutex.Lock()
-		verrs[rule.Field] = rule.validate(form[rule.Field]...)
+		verrs[rule.Field] = append(verrs[rule.Field], rule.validate(form[rule.Field]...)...)
 		mutex.Unlock()
 	}
 
