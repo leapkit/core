@@ -3,1197 +3,1183 @@ package validation
 import (
 	"net/url"
 	"regexp"
-	"slices"
 	"testing"
 	"time"
 )
 
-func TestNew(t *testing.T) {
-	form := url.Values{
-		"first_name": []string{""},
-		"last_name":  []string{""},
-	}
-
-	verrs := New(form)
-
-	if len(verrs) != 0 {
-		t.Fatalf("validation should not contains any error")
-	}
-}
-
-func TestRule(test *testing.T) {
-	test.Run("if value is invalid verrs should not be empty", func(t *testing.T) {
+func TestRuleRequired(test *testing.T) {
+	// Given a form with not-empty field values, Then the required rule should return no error.
+	test.Run("correct form has field values", func(t *testing.T) {
 		form := url.Values{
-			"input_field":  []string{""},
-			"number_input": []string{"50"},
-			"multiple":     []string{"one", "two", "three", "invalid_value"},
-			"text_input":   []string{"lorem ipsum"},
+			"input_field": []string{"value_1"},
 		}
 
-		verrs := New(form,
-			Rule{
+		validations := Validations{
+			Validation{
 				Field: "input_field",
-				Validations: []Validation{
+				Rules: []Rule{
 					Required(),
 				},
 			},
-			Rule{
-				Field: "number_input",
-				Validations: []Validation{
+		}
+
+		verrs := validations.Validate(form)
+
+		if len(verrs) > 0 {
+			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
+		}
+	})
+
+	// Given a form without field, Then the required rule should return error.
+	test.Run("incorrect form does not have field", func(t *testing.T) {
+		form := url.Values{}
+
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					Required(),
+				},
+			},
+		}
+
+		verrs := validations.Validate(form)
+
+		if len(verrs) == 0 {
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
+		}
+	})
+
+	// Given a form with at least one empty field value, Then the required rule should return error
+	test.Run("incorrect form field has at least one empty value", func(t *testing.T) {
+		form := url.Values{
+			"input_field": []string{"value_1", "", "value_3"},
+		}
+
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					Required(),
+				},
+			},
+		}
+
+		verrs := validations.Validate(form)
+
+		if len(verrs) == 0 {
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
+		}
+	})
+}
+
+func TestRuleMatches(test *testing.T) {
+	// Given a form with values that match the field, Then the Matches rule should return no error.
+	test.Run("correct form field values match with field", func(t *testing.T) {
+		form := url.Values{
+			"input_field": []string{"value_1"},
+		}
+
+		field := "value_1"
+
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					Matches(field),
+				},
+			},
+		}
+
+		verrs := validations.Validate(form)
+
+		if len(verrs) > 0 {
+			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
+		}
+	})
+
+	// Given a form with values that don't match the field, Then the Matches rule should return error.
+	test.Run("incorrect form field values do not match with field", func(t *testing.T) {
+		form := url.Values{
+			"input_field": []string{"value_1"},
+		}
+
+		field := "value_2"
+
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					Matches(field),
+				},
+			},
+		}
+
+		verrs := validations.Validate(form)
+
+		if len(verrs) == 0 {
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
+		}
+	})
+}
+
+func TestRuleMatchRegex(test *testing.T) {
+	// Given a form with values that match with the regular expression, Then the MatchRegex rule should return no error.
+	test.Run("correct form field values match with the regular expression", func(t *testing.T) {
+		form := url.Values{
+			"input_field": []string{"seafood"},
+		}
+
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					MatchRegex(regexp.MustCompile(`foo.*`)),
+				},
+			},
+		}
+
+		verrs := validations.Validate(form)
+
+		if len(verrs) > 0 {
+			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
+		}
+	})
+
+	// Given a form with values that don't match with the regular expression, Then the MatchRegex rule should return error.
+	test.Run("incorrect form field values do not match with the regular expression", func(t *testing.T) {
+		form := url.Values{
+			"input_field": []string{"seafood"},
+		}
+
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					MatchRegex(regexp.MustCompile(`bar.*`)),
+				},
+			},
+		}
+
+		verrs := validations.Validate(form)
+
+		if len(verrs) == 0 {
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
+		}
+	})
+}
+
+func TestRuleLessThan(test *testing.T) {
+	// Given a form with values less than compared value, Then the LessThan rule should return no error.
+	test.Run("correct form field value is less to compared value", func(t *testing.T) {
+		form := url.Values{
+			"input_field": []string{"10"},
+		}
+
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
 					LessThan(20),
 				},
 			},
-			Rule{
-				Field: "multiple",
-				Validations: []Validation{
-					WithinOptions([]string{"one", "two", "tree"}),
+		}
+
+		verrs := validations.Validate(form)
+
+		if len(verrs) > 0 {
+			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
+		}
+	})
+
+	// Given a form with values equal to compared value, Then the LessThan rule should return error.
+	test.Run("incorrect form field value is equal to compared value", func(t *testing.T) {
+		form := url.Values{
+			"input_field": []string{"10"},
+		}
+
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					LessThan(10),
 				},
 			},
-			Rule{
-				Field: "text_input",
-				Validations: []Validation{
-					MinLength(20),
+		}
+
+		verrs := validations.Validate(form)
+
+		if len(verrs) == 0 {
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
+		}
+	})
+
+	// Given a form with values greater than compared value, Then the LessThan rule should return error.
+	test.Run("incorrect form field value is greater than compared value", func(t *testing.T) {
+		form := url.Values{
+			"input_field": []string{"10"},
+		}
+
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					LessThan(5),
 				},
 			},
-		)
+		}
 
-		if len(verrs) != 4 {
-			t.Fatalf("verrs should have four errors, verrs=%v", verrs)
+		verrs := validations.Validate(form)
 
+		if len(verrs) == 0 {
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
 	})
 
-	test.Run("if SkipIf is true form values should not be validated", func(t *testing.T) {
+	// Given a form with no number values, Then the LessThan rule should return error.
+	test.Run("incorrect form field value is not a number", func(t *testing.T) {
 		form := url.Values{
-			"input_field": []string{""},
+			"input_field": []string{"invalid value"},
 		}
 
-		customCondition := true
-
-		verrs := New(form, Rule{
-			Field:  "input_field",
-			SkipIf: customCondition,
-			Validations: []Validation{
-				Required(),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					LessThan(5),
+				},
 			},
-		})
-
-		if len(verrs) != 0 {
-			t.Fatalf("verrs should not have errors, verrs=%v", verrs)
-		}
-	})
-
-	test.Run("if SkipIf is true form values should not be validated", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{""},
 		}
 
-		customCondition := true
+		verrs := validations.Validate(form)
 
-		verrs := New(form, Rule{
-			Field:  "input_field",
-			SkipIf: customCondition,
-			Validations: []Validation{
-				Required(),
-			},
-		})
-
-		if len(verrs) != 0 {
-			t.Fatalf("verrs should not have errors, verrs=%v", verrs)
+		if len(verrs) == 0 {
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
 	})
 }
 
-func TestValidationRequired(test *testing.T) {
-	test.Run("happy path", func(t *testing.T) {
+func TestRuleLessThanOrEqualTo(test *testing.T) {
+	// Given a form with values less than compared value, Then the LessThanOrEqualTo rule should return no error.
+	test.Run("correct form field value is less to compared value", func(t *testing.T) {
 		form := url.Values{
-			"input_field": []string{"foo"},
+			"input_field": []string{"10"},
 		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				Required(),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					LessThanOrEqualTo(20),
+				},
 			},
-		})
+		}
 
-		if len(verrs) != 0 {
-			t.Fatalf("verrs should not have an error, verrs=%v", verrs)
+		verrs := validations.Validate(form)
+
+		if len(verrs) > 0 {
+			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
 	})
 
-	test.Run("happy path with custom error", func(t *testing.T) {
+	// Given a form with values equal to compared value, Then the LessThanOrEqualTo rule should return no error.
+	test.Run("correct form field value is equal to compared value", func(t *testing.T) {
 		form := url.Values{
-			"input_field": []string{""},
+			"input_field": []string{"10"},
 		}
 
-		customError := "My custom error"
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				Required(customError),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					LessThanOrEqualTo(10),
+				},
 			},
-		})
-
-		if len(verrs) == 0 {
-			t.Fatalf("verrs should have an error, verrs=%v", verrs)
 		}
 
-		if !slices.Contains(verrs["input_field"], customError) {
-			t.Fatalf("verrs should contain '%s' custom error", customError)
+		verrs := validations.Validate(form)
+		if len(verrs) > 0 {
+			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
 	})
 
-	test.Run("field is not in form", func(t *testing.T) {
-		form := url.Values{}
+	// Given a form with values greater than compared value, Then the LessThanOrEqualTo rule should return error.
+	test.Run("incorrect form field value is greater than compared value", func(t *testing.T) {
+		form := url.Values{
+			"input_field": []string{"10"},
+		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				Required(),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					LessThanOrEqualTo(5),
+				},
 			},
-		})
+		}
+
+		verrs := validations.Validate(form)
 
 		if len(verrs) == 0 {
-			t.Fatalf("verrs should have an error, verrs=%v", verrs)
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
 	})
 
-	test.Run("field is empty", func(t *testing.T) {
+	// Given a form with no number values, Then the LessThanOrEqualTo rule should return error.
+	test.Run("incorrect form field value is not a number", func(t *testing.T) {
 		form := url.Values{
-			"input_field": []string{""},
+			"input_field": []string{"invalid value"},
 		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				Required(),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					LessThanOrEqualTo(5),
+				},
 			},
-		})
+		}
+
+		verrs := validations.Validate(form)
 
 		if len(verrs) == 0 {
-			t.Fatalf("verrs should have an error, verrs=%v", verrs)
-		}
-	})
-
-	test.Run("at least a field is empty", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"one", "", "three"},
-		}
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				Required(),
-			},
-		})
-
-		if len(verrs) == 0 {
-			t.Fatalf("verrs should have an error, verrs=%v", verrs)
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
 	})
 }
 
-func TestValidationMatch(test *testing.T) {
-	test.Run("happy path", func(t *testing.T) {
+func TestRuleGreaterThan(test *testing.T) {
+	// Given a form with values greater than compared value, Then the GreaterThan rule should return no error.
+	test.Run("correct form field value is greater than compared value", func(t *testing.T) {
 		form := url.Values{
-			"input_field": []string{"foo"},
+			"input_field": []string{"10"},
 		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				Match("foo"),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					GreaterThan(5),
+				},
 			},
-		})
+		}
 
-		if len(verrs) != 0 {
-			t.Fatalf("verrs should not have errors, verrs=%v", verrs)
+		verrs := validations.Validate(form)
+
+		if len(verrs) > 0 {
+			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
 	})
 
-	test.Run("happy path with custom error", func(t *testing.T) {
+	// Given a form with values equal to compared value, Then the GreaterThan rule should return error.
+	test.Run("incorrect form field value is equal to compared value", func(t *testing.T) {
 		form := url.Values{
-			"input_field": []string{"foo"},
+			"input_field": []string{"10"},
 		}
 
-		customError := "My custom error"
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				Match("bar", customError),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					GreaterThan(10),
+				},
 			},
-		})
+		}
+
+		verrs := validations.Validate(form)
 
 		if len(verrs) == 0 {
-			t.Fatalf("verrs should have an error, verrs=%v", verrs)
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
+		}
+	})
+
+	// Given a form with values less than compared value, Then the GreaterThan rule should return error.
+	test.Run("incorrect form field value is less than compared value", func(t *testing.T) {
+		form := url.Values{
+			"input_field": []string{"10"},
 		}
 
-		if !slices.Contains(verrs["input_field"], customError) {
-			t.Fatalf("verrs should contain '%s' custom error", customError)
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					GreaterThan(20),
+				},
+			},
+		}
+
+		verrs := validations.Validate(form)
+
+		if len(verrs) == 0 {
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
+		}
+	})
+
+	// Given a form with no number values, Then the GreaterThan rule should return error.
+	test.Run("incorrect form field value is not a number", func(t *testing.T) {
+		form := url.Values{
+			"input_field": []string{"invalid value"},
+		}
+
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					GreaterThan(5),
+				},
+			},
+		}
+
+		verrs := validations.Validate(form)
+
+		if len(verrs) == 0 {
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
 	})
 }
 
-func TestValidationMatchRegex(test *testing.T) {
-	test.Run("happy path", func(t *testing.T) {
+func TestRuleGreaterThanOrEqualTo(test *testing.T) {
+	// Given a form with values greater than compared value, Then the GreaterThanOrEqualTo rule should return no error.
+	test.Run("correct form field value is greater than compared value", func(t *testing.T) {
 		form := url.Values{
-			"input_field": []string{"foo"},
+			"input_field": []string{"10"},
 		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				MatchRegex(regexp.MustCompile("f(o)+")),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					GreaterThanOrEqualTo(5),
+				},
 			},
-		})
-
-		if len(verrs) != 0 {
-			t.Fatalf("verrs should not have errors, verrs=%v", verrs)
 		}
 
+		verrs := validations.Validate(form)
+
+		if len(verrs) > 0 {
+			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
+		}
 	})
 
-	test.Run("happy path with custom error", func(t *testing.T) {
+	// Given a form with values equal to compared value, Then the GreaterThanOrEqualTo rule should return no error.
+	test.Run("correct form field value is equal to compared value", func(t *testing.T) {
 		form := url.Values{
-			"input_field": []string{"foo"},
+			"input_field": []string{"10"},
 		}
 
-		customError := "My custom error"
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				MatchRegex(regexp.MustCompile("f(o){5,}"), customError),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					GreaterThanOrEqualTo(10),
+				},
 			},
-		})
+		}
+
+		verrs := validations.Validate(form)
+
+		if len(verrs) > 0 {
+			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
+		}
+	})
+
+	// Given a form with values less than compared value, Then the GreaterThanOrEqualTo rule should return error.
+	test.Run("incorrect form field value is less than compared value", func(t *testing.T) {
+		form := url.Values{
+			"input_field": []string{"10"},
+		}
+
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					GreaterThanOrEqualTo(20),
+				},
+			},
+		}
+
+		verrs := validations.Validate(form)
 
 		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
+		}
+	})
+
+	// Given a form with no number values, Then the GreaterThanOrEqualTo rule should return error.
+	test.Run("incorrect form field value is not a number", func(t *testing.T) {
+		form := url.Values{
+			"input_field": []string{"invalid value"},
 		}
 
-		if !slices.Contains(verrs["input_field"], customError) {
-			t.Fatalf("verrs should contain '%s' custom error", customError)
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					GreaterThanOrEqualTo(5),
+				},
+			},
+		}
+
+		verrs := validations.Validate(form)
+
+		if len(verrs) == 0 {
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
 	})
 }
 
-func TestValidationLessThan(test *testing.T) {
-	test.Run("happy path", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"10"},
-		}
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				LessThan(50),
-			},
-		})
-
-		if len(verrs) != 0 {
-			t.Fatalf("verrs should not have errors, verrs=%v", verrs)
-		}
-	})
-
-	test.Run("happy path with custom error", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"10"},
-		}
-
-		customError := "My custom error"
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				LessThan(9, customError),
-			},
-		})
-
-		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
-		}
-
-		if !slices.Contains(verrs["input_field"], customError) {
-			t.Fatalf("verrs should contain '%s' custom error", customError)
-		}
-	})
-
-	test.Run("at least a value is greater than expected value", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"10", "100", "12"},
-		}
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				LessThan(20),
-			},
-		})
-
-		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
-		}
-
-		if len(verrs["input_field"]) == 0 {
-			t.Fatal("verrs should contain an error for 'input_field' key")
-		}
-	})
-
-	test.Run("value is not a number", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"is not a number"},
-		}
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				LessThan(10),
-			},
-		})
-
-		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
-		}
-
-		if !slices.Contains(verrs["input_field"], "is not a number") {
-			t.Fatal("verrs should contain an 'is not a number' error")
-		}
-	})
-}
-
-func TestValidationLessThanOrEqualTo(test *testing.T) {
-	test.Run("happy path", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"10"},
-		}
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				LessThanOrEqualTo(10),
-			},
-		})
-
-		if len(verrs) != 0 {
-			t.Fatalf("verrs should not have errors, verrs=%v", verrs)
-		}
-	})
-
-	test.Run("happy path with custom error", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"10"},
-		}
-
-		customError := "My custom error"
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				LessThanOrEqualTo(9, customError),
-			},
-		})
-
-		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
-		}
-
-		if !slices.Contains(verrs["input_field"], customError) {
-			t.Fatalf("verrs should contain '%s' custom error", customError)
-		}
-	})
-
-	test.Run("at least a value is greater than expected value", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"10", "100", "12"},
-		}
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				LessThanOrEqualTo(20),
-			},
-		})
-
-		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
-		}
-
-		if len(verrs["input_field"]) == 0 {
-			t.Fatal("verrs should contain an error for 'input_field' key")
-		}
-	})
-
-	test.Run("value is not a number", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"is not a number"},
-		}
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				LessThanOrEqualTo(10),
-			},
-		})
-
-		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
-		}
-
-		if !slices.Contains(verrs["input_field"], "is not a number") {
-			t.Fatal("verrs should contain an 'is not a number' error")
-		}
-	})
-}
-
-func TestValidationGreaterThan(test *testing.T) {
-	test.Run("happy path", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"10"},
-		}
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				GreaterThan(5),
-			},
-		})
-
-		if len(verrs) != 0 {
-			t.Fatalf("verrs should not have errors, verrs=%v", verrs)
-		}
-	})
-
-	test.Run("happy path with custom error", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"10"},
-		}
-
-		customError := "My custom error"
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				GreaterThan(11, customError),
-			},
-		})
-
-		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
-		}
-
-		if !slices.Contains(verrs["input_field"], customError) {
-			t.Fatalf("verrs should contain '%s' custom error", customError)
-		}
-	})
-
-	test.Run("at least a value is less than expected value", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"10", "100", "12"},
-		}
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				GreaterThan(10),
-			},
-		})
-
-		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
-		}
-
-		if len(verrs["input_field"]) == 0 {
-			t.Fatal("verrs should contain an error for 'input_field' key")
-		}
-	})
-
-	test.Run("value is not a number", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"is not a number"},
-		}
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				GreaterThan(10),
-			},
-		})
-
-		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
-		}
-
-		if !slices.Contains(verrs["input_field"], "is not a number") {
-			t.Fatal("verrs should contain an 'is not a number' error")
-		}
-	})
-}
-
-func TestValidationGreaterThanOrEqualTo(test *testing.T) {
-	test.Run("happy path", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"10"},
-		}
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				GreaterThanOrEqualTo(10),
-			},
-		})
-
-		if len(verrs) != 0 {
-			t.Fatalf("verrs should not have errors, verrs=%v", verrs)
-		}
-	})
-
-	test.Run("happy path with custom error", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"10"},
-		}
-
-		customError := "My custom error"
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				GreaterThanOrEqualTo(11, customError),
-			},
-		})
-
-		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
-		}
-
-		if !slices.Contains(verrs["input_field"], customError) {
-			t.Fatalf("verrs should contain '%s' custom error", customError)
-		}
-	})
-
-	test.Run("at least a value is less than expected value", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"10", "100", "12"},
-		}
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				GreaterThanOrEqualTo(11),
-			},
-		})
-
-		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
-		}
-
-		if len(verrs["input_field"]) == 0 {
-			t.Fatal("verrs should contain an error for 'input_field' key")
-		}
-	})
-
-	test.Run("value is not a number", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"is not a number"},
-		}
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				GreaterThanOrEqualTo(10),
-			},
-		})
-
-		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
-		}
-
-		if !slices.Contains(verrs["input_field"], "is not a number") {
-			t.Fatal("verrs should contain an 'is not a number' error")
-		}
-	})
-}
-
-func TestValidationMinLength(test *testing.T) {
-	test.Run("happy path", func(t *testing.T) {
+func TestRuleMinLength(test *testing.T) {
+	// Given a form field values with a length greater than the compared value, Then the MinLength rule should return no error.
+	test.Run("correct form field values with a length greater than the compared value", func(t *testing.T) {
 		form := url.Values{
 			"input_field": []string{"lorem ipsum"},
 		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				MinLength(3),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					MinLength(3),
+				},
 			},
-		})
+		}
 
-		if len(verrs) != 0 {
-			t.Fatalf("verrs should not have errors, verrs=%v", verrs)
+		verrs := validations.Validate(form)
+
+		if len(verrs) > 0 {
+			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
 	})
 
-	test.Run("happy path with custom error", func(t *testing.T) {
+	// Given a form field values with a length equal to the compared value, Then the MinLength rule should return no error.
+	test.Run("correct form field values with a length equal to the compared value", func(t *testing.T) {
 		form := url.Values{
 			"input_field": []string{"lorem ipsum"},
 		}
 
-		customError := "My custom error"
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				MinLength(20, customError),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					MinLength(11),
+				},
 			},
-		})
-
-		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
 		}
 
-		if !slices.Contains(verrs["input_field"], customError) {
-			t.Fatalf("verrs should contain '%s' custom error", customError)
+		verrs := validations.Validate(form)
+
+		if len(verrs) > 0 {
+			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
 	})
 
-	test.Run("value with spaces", func(t *testing.T) {
+	// Given a form field values with a length less than the compared value, Then the MinLength rule should return error.
+	test.Run("incorrect form field values with a length less than the compared value", func(t *testing.T) {
 		form := url.Values{
-			"input_field": []string{"     text     "},
+			"input_field": []string{"lo"},
 		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				MinLength(5),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					MinLength(11),
+				},
 			},
-		})
+		}
+
+		verrs := validations.Validate(form)
 
 		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
-		}
-	})
-
-	test.Run("value length is equal to min length should be valid", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"foo"},
-		}
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				MinLength(3),
-			},
-		})
-
-		if len(verrs) != 0 {
-			t.Fatalf("verrs should not have errors, verrs=%v", verrs)
-		}
-	})
-
-	test.Run("at least a value length is less than expected value", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"long text 1", "a long text 1", "short"},
-		}
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				MinLength(10),
-			},
-		})
-
-		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
-		}
-
-		if len(verrs["input_field"]) == 0 {
-			t.Fatal("verrs should contain an error for 'input_field' key")
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
 	})
 }
 
-func TestValidationMaxLength(test *testing.T) {
-	test.Run("happy path", func(t *testing.T) {
+func TestRuleMaxLength(test *testing.T) {
+	// Given a form field values with a length less than the compared value, Then the MaxLength rule should return no error.
+	test.Run("correct form field values with a length greater than the compared value", func(t *testing.T) {
 		form := url.Values{
 			"input_field": []string{"lorem ipsum"},
 		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				MaxLength(20),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					MaxLength(20),
+				},
 			},
-		})
+		}
 
-		if len(verrs) != 0 {
-			t.Fatalf("verrs should not have errors, verrs=%v", verrs)
+		verrs := validations.Validate(form)
+
+		if len(verrs) > 0 {
+			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
 	})
 
-	test.Run("happy path with custom error", func(t *testing.T) {
+	// Given a form field values with a length equal to the compared value, Then the MaxLength rule should return no error.
+	test.Run("correct form field values with a length equal to the compared value", func(t *testing.T) {
 		form := url.Values{
 			"input_field": []string{"lorem ipsum"},
 		}
 
-		customError := "My custom error"
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				MaxLength(10, customError),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					MaxLength(11),
+				},
 			},
-		})
+		}
+
+		verrs := validations.Validate(form)
+
+		if len(verrs) > 0 {
+			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
+		}
+	})
+
+	// Given a form field values with a length greater than the compared value, Then the MaxLength rule should return error.
+	test.Run("incorrect form field values with a length less than the compared value", func(t *testing.T) {
+		form := url.Values{
+			"input_field": []string{"lorem ipsum"},
+		}
+
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					MaxLength(5),
+				},
+			},
+		}
+
+		verrs := validations.Validate(form)
 
 		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
-		}
-
-		if !slices.Contains(verrs["input_field"], customError) {
-			t.Fatalf("verrs should contain '%s' custom error", customError)
-		}
-	})
-
-	test.Run("value with spaces correct", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"     long expression     "},
-		}
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				MaxLength(15),
-			},
-		})
-
-		if len(verrs) != 0 {
-			t.Fatalf("verrs should not have errors, verrs=%v", verrs)
-		}
-	})
-
-	test.Run("value with spaces incorrect", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"     long expression     "},
-		}
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				MaxLength(10),
-			},
-		})
-
-		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
-		}
-	})
-
-	test.Run("value length is equal to max length should be valid", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"foo"},
-		}
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				MaxLength(3),
-			},
-		})
-
-		if len(verrs) != 0 {
-			t.Fatalf("verrs should not have errors, verrs=%v", verrs)
-		}
-	})
-
-	test.Run("at least a value length is greater than expected value", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"short text 1", "short text 2", "short text short text short text"},
-		}
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				MaxLength(15),
-			},
-		})
-
-		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
-		}
-
-		if len(verrs["input_field"]) == 0 {
-			t.Fatal("verrs should contain an error for 'input_field' key")
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
 	})
 }
 
-func TestValidationWithinOptions(test *testing.T) {
-	test.Run("happy path", func(t *testing.T) {
+func TestRuleWithinOptions(test *testing.T) {
+	// Given a form field with values that are in the option list, Then the WithinOptions rule should return no error.
+	test.Run("correct form field values are in the option list", func(t *testing.T) {
 		form := url.Values{
-			"input_field": []string{"one", "two"},
+			"input_field": []string{"value_1", "value_2"},
 		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				WithinOptions([]string{"one", "two", "three"}),
+		valdiations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					WithinOptions([]string{"value_1", "value_2", "value_3"}),
+				},
 			},
-		})
+		}
 
-		if len(verrs) != 0 {
-			t.Fatalf("verrs should not have errors, verrs=%v", verrs)
+		verrs := valdiations.Validate(form)
+
+		if len(verrs) > 0 {
+			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
 	})
 
-	test.Run("at least a value is not in option list", func(t *testing.T) {
+	// Given a form field with at leas a value that is not in the option list, Then the WithinOptions rule should return error.
+	test.Run("incorrect a form field value is not in the option list", func(t *testing.T) {
 		form := url.Values{
-			"input_field": []string{"one", "two", "three", "four"},
+			"input_field": []string{"value_1", "value_4"},
 		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				WithinOptions([]string{"one", "two", "three"}),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					WithinOptions([]string{"value_1", "value_2", "value_3"}),
+				},
 			},
-		})
+		}
+
+		verrs := validations.Validate(form)
 
 		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
 	})
 }
 
-func TestValidaitonUUID(test *testing.T) {
-	test.Run("happy path", func(t *testing.T) {
+func TestRuleValidUUID(test *testing.T) {
+	// Given a form field uuid values, Then the ValidUUID rule should return no error.
+	test.Run("correct form field values are uuids", func(t *testing.T) {
 		form := url.Values{
-			"input_field": []string{"bc604324-4c14-4e17-ada9-240b27637ee5"},
+			"input_field": []string{"6ad99ef2-fe43-4c42-b288-aef9040b5388"},
 		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				ValidUUID(),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					ValidUUID(),
+				},
 			},
-		})
+		}
 
-		if len(verrs) != 0 {
-			t.Fatalf("verrs should not have errors, verrs=%v", verrs)
+		verrs := validations.Validate(form)
+
+		if len(verrs) > 0 {
+			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
 	})
 
-	test.Run("value is not a uuid", func(t *testing.T) {
+	// Given a form field with invalid values, Then the ValidUUID rule should return error.
+	test.Run("incorrect form field values are not uuids", func(t *testing.T) {
 		form := url.Values{
-			"input_field": []string{"invalid-uuid-4e17-ada9-240b27637ee5"},
+			"input_field": []string{"no-uuid"},
 		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				ValidUUID(),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					ValidUUID(),
+				},
 			},
-		})
+		}
+
+		verrs := validations.Validate(form)
 
 		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
 	})
 }
 
-func TestValidationTimeEqualTo(test *testing.T) {
-	test.Run("happy path", func(t *testing.T) {
+func TestRuleTimeEqualTo(test *testing.T) {
+	// Given a form field values that are times equal to the compared time, Then the TimeEqualTo rule should return no error.
+	test.Run("correct form field values are times equal to the compared time", func(t *testing.T) {
 		form := url.Values{
 			"input_field": []string{"2026-06-26"},
 		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				TimeEqualTo(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC)),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					TimeEqualTo(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC)),
+				},
 			},
-		})
+		}
 
-		if len(verrs) != 0 {
-			t.Fatalf("verrs should not have errors, verrs=%v", verrs)
+		verrs := validations.Validate(form)
+
+		if len(verrs) > 0 {
+			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
 	})
 
-	test.Run("value is not equal to time", func(t *testing.T) {
+	// Given a form field values that are times different to the compared time, Then the TimeEqualTo rule should return error.
+	test.Run("incorrect form field values are times different to the compared time", func(t *testing.T) {
 		form := url.Values{
 			"input_field": []string{"2026-06-26"},
 		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				TimeEqualTo(time.Date(2026, time.June, 27, 0, 0, 0, 0, time.UTC)),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					TimeEqualTo(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC)),
+				},
 			},
-		})
+		}
+
+		verrs := validations.Validate(form)
 
 		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
 	})
 
-	test.Run("value is not a time", func(t *testing.T) {
+	// Given a form field values that are not times, Then the TimeEqualTo rule should return error.
+	test.Run("incorrect form field values that are not times", func(t *testing.T) {
 		form := url.Values{
-			"input_field": []string{"invalid value"},
+			"input_field": []string{"is not a time"},
 		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				TimeEqualTo(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC)),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					TimeEqualTo(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC)),
+				},
 			},
-		})
+		}
+
+		verrs := validations.Validate(form)
 
 		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
 	})
 }
 
-func TestValidationTimeBefore(test *testing.T) {
-	test.Run("happy path", func(t *testing.T) {
+func TestRuleTimeBefore(test *testing.T) {
+	// Given a form field values that are times before to the compared time, Then the TimeBefore rule should return no error.
+	test.Run("correct form field values are times before to the compared time", func(t *testing.T) {
 		form := url.Values{
 			"input_field": []string{"2026-06-26"},
 		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				TimeBefore(time.Date(2026, time.June, 27, 0, 0, 0, 0, time.UTC)),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					TimeBefore(time.Date(2028, time.June, 26, 0, 0, 0, 0, time.UTC)),
+				},
 			},
-		})
+		}
 
-		if len(verrs) != 0 {
-			t.Fatalf("verrs should not have errors, verrs=%v", verrs)
+		verrs := validations.Validate(form)
+
+		if len(verrs) > 0 {
+			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
 	})
 
-	test.Run("value is after the time", func(t *testing.T) {
+	// Given a form field values that are times equal to the compared time, Then the TimeBefore rule should return error.
+	test.Run("incorrect form field values are times equal to the compared time", func(t *testing.T) {
 		form := url.Values{
-			"input_field": []string{"2026-06-27"},
+			"input_field": []string{"2026-06-26"},
 		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				TimeBefore(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC)),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					TimeBefore(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC)),
+				},
 			},
-		})
+		}
+
+		verrs := validations.Validate(form)
 
 		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
 	})
 
-	test.Run("value is not a time", func(t *testing.T) {
+	// Given a form field values that are times after to the compared time, Then the TimeBefore rule should return error.
+	test.Run("incorrect form field values are times after to the compared time", func(t *testing.T) {
 		form := url.Values{
-			"input_field": []string{"invalid value"},
+			"input_field": []string{"2026-06-26"},
 		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				TimeBefore(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC)),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					TimeBeforeOrEqualTo(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC)),
+				},
 			},
-		})
+		}
+
+		verrs := validations.Validate(form)
 
 		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
+		}
+	})
+
+	// Given a form field values that are not times, Then the TimeBefore rule should return error.
+	test.Run("incorrect form field values are not times", func(t *testing.T) {
+		form := url.Values{
+			"input_field": []string{"is not a time"},
+		}
+
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					TimeBefore(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC)),
+				},
+			},
+		}
+
+		verrs := validations.Validate(form)
+
+		if len(verrs) == 0 {
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
 	})
 }
 
-func TestValidationTimeBeforeOrEqualTo(test *testing.T) {
-	test.Run("happy path", func(t *testing.T) {
+func TestRuleTimeBeforeOrEqualTo(test *testing.T) {
+	// Given a form field values that are times before to the compared time, Then the TimeBeforeOrEqualTo rule should return no error.
+	test.Run("correct form field values are times before to the compared time", func(t *testing.T) {
 		form := url.Values{
 			"input_field": []string{"2026-06-26"},
 		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				TimeBeforeOrEqualTo(time.Date(2026, time.June, 27, 0, 0, 0, 0, time.UTC)),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					TimeBeforeOrEqualTo(time.Date(2028, time.June, 26, 0, 0, 0, 0, time.UTC)),
+				},
 			},
-		})
+		}
 
-		if len(verrs) != 0 {
-			t.Fatalf("verrs should not have errors, verrs=%v", verrs)
+		verrs := validations.Validate(form)
+
+		if len(verrs) > 0 {
+			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
 	})
 
-	test.Run("value is after the time", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"2026-06-27"},
-		}
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				TimeBeforeOrEqualTo(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC)),
-			},
-		})
-
-		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
-		}
-	})
-
-	test.Run("value is equal to time", func(t *testing.T) {
+	// Given a form field values that are times equal to the compared time, Then the TimeBeforeOrEqualTo rule should return no error.
+	test.Run("correct form field values are times equal to the compared time", func(t *testing.T) {
 		form := url.Values{
 			"input_field": []string{"2026-06-26"},
 		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				TimeBeforeOrEqualTo(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC)),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					TimeBeforeOrEqualTo(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC)),
+				},
 			},
-		})
+		}
 
-		if len(verrs) != 0 {
-			t.Fatalf("verrs should not have errors, verrs=%v", verrs)
+		verrs := validations.Validate(form)
+
+		if len(verrs) > 0 {
+			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
 	})
 
-	test.Run("value is not a time", func(t *testing.T) {
+	// Given a form field values that are times after to the compared time, Then the TimeBeforeOrEqualTo rule should return error.
+	test.Run("incorrect form field values are times after to the compared time", func(t *testing.T) {
 		form := url.Values{
-			"input_field": []string{"invalid value"},
+			"input_field": []string{"2026-06-26"},
 		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				TimeBeforeOrEqualTo(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC)),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					TimeBeforeOrEqualTo(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC)),
+				},
 			},
-		})
+		}
+
+		verrs := validations.Validate(form)
 
 		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
+		}
+	})
+
+	// Given a form field values that are not times, Then the TimeBeforeOrEqualTo rule should return error.
+	test.Run("incorrect form field values are not times", func(t *testing.T) {
+		form := url.Values{
+			"input_field": []string{"is not a time"},
+		}
+
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					TimeBeforeOrEqualTo(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC)),
+				},
+			},
+		}
+
+		verrs := validations.Validate(form)
+
+		if len(verrs) == 0 {
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
 	})
 }
 
-func TestValidationTimeAfter(test *testing.T) {
-	test.Run("happy path", func(t *testing.T) {
+func TestRuleTimeAfter(test *testing.T) {
+	// Given a form field values that are times after to the compared time, Then the TimeAfter rule should return no error.
+	test.Run("correct form field values are times after to the compared time", func(t *testing.T) {
 		form := url.Values{
 			"input_field": []string{"2026-06-26"},
 		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				TimeAfter(time.Date(2026, time.June, 25, 0, 0, 0, 0, time.UTC)),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					TimeAfter(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC)),
+				},
 			},
-		})
+		}
 
-		if len(verrs) != 0 {
-			t.Fatalf("verrs should not have errors, verrs=%v", verrs)
+		verrs := validations.Validate(form)
+
+		if len(verrs) > 0 {
+			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
 	})
 
-	test.Run("value is before the time", func(t *testing.T) {
+	// Given a form field values that are times equal to the compared time, Then the TimeAfter rule should return error.
+	test.Run("incorrect form field values are times equal to the compared time", func(t *testing.T) {
 		form := url.Values{
-			"input_field": []string{"2026-06-25"},
+			"input_field": []string{"2026-06-26"},
 		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				TimeAfter(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC)),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					TimeAfter(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC)),
+				},
 			},
-		})
+		}
+
+		verrs := validations.Validate(form)
 
 		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
 	})
 
-	test.Run("value is not a time", func(t *testing.T) {
+	// Given a form field values that are times before to the compared time, Then the TimeAfter rule should return error.
+	test.Run("incorrect form field values are times before to the compared time", func(t *testing.T) {
 		form := url.Values{
-			"input_field": []string{"invalid value"},
+			"input_field": []string{"2026-06-26"},
 		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				TimeAfter(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC)),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					TimeAfter(time.Date(2028, time.June, 26, 0, 0, 0, 0, time.UTC)),
+				},
 			},
-		})
+		}
+
+		verrs := validations.Validate(form)
 
 		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
+		}
+	})
+
+	// Given a form field values that are not times, Then the TimeAfter rule should return error.
+	test.Run("incorrect form field values are not times", func(t *testing.T) {
+		form := url.Values{
+			"input_field": []string{"is not a time"},
+		}
+
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					TimeAfter(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC)),
+				},
+			},
+		}
+
+		verrs := validations.Validate(form)
+
+		if len(verrs) == 0 {
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
 	})
 }
 
-func TestValidationTimeAfterOrEqualTo(test *testing.T) {
-	test.Run("happy path", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"2026-06-27"},
-		}
-
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				TimeAfterOrEqualTo(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC)),
-			},
-		})
-
-		if len(verrs) != 0 {
-			t.Fatalf("verrs should not have errors, verrs=%v", verrs)
-		}
-	})
-
-	test.Run("value is before the time", func(t *testing.T) {
+func TestRuleTimeAfterOrEqualTo(test *testing.T) {
+	// Given a form field values that are times after to the compared time, Then the TimeAfterOrEqualTo rule should return no error.
+	test.Run("correct form field values are times after to the compared time", func(t *testing.T) {
 		form := url.Values{
 			"input_field": []string{"2026-06-26"},
 		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				TimeAfterOrEqualTo(time.Date(2026, time.June, 27, 0, 0, 0, 0, time.UTC)),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					TimeAfterOrEqualTo(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC)),
+				},
 			},
-		})
+		}
 
-		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
+		verrs := validations.Validate(form)
+
+		if len(verrs) > 0 {
+			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
 	})
 
-	test.Run("value is equal to time", func(t *testing.T) {
+	// Given a form field values that are times equal to the compared time, Then the TimeAfterOrEqualTo rule should return no error.
+	test.Run("correct form field values are times equal to the compared time", func(t *testing.T) {
 		form := url.Values{
 			"input_field": []string{"2026-06-26"},
 		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				TimeAfterOrEqualTo(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC)),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					TimeAfterOrEqualTo(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC)),
+				},
 			},
-		})
+		}
 
-		if len(verrs) != 0 {
-			t.Fatalf("verrs should not have errors, verrs=%v", verrs)
+		verrs := validations.Validate(form)
+
+		if len(verrs) > 0 {
+			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
 	})
 
-	test.Run("value is not a time", func(t *testing.T) {
+	// Given a form field values that are times before to the compared time, Then the TimeAfterOrEqualTo rule should return error.
+	test.Run("incorrect form field values are times before to the compared time", func(t *testing.T) {
 		form := url.Values{
-			"input_field": []string{"invalid value"},
+			"input_field": []string{"2026-06-26"},
 		}
 
-		verrs := New(form, Rule{
-			Field: "input_field",
-			Validations: []Validation{
-				TimeAfterOrEqualTo(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC)),
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					TimeAfterOrEqualTo(time.Date(2028, time.June, 26, 0, 0, 0, 0, time.UTC)),
+				},
 			},
-		})
+		}
+
+		verrs := validations.Validate(form)
 
 		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors, verrs=%v", verrs)
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
+		}
+	})
+
+	// Given a form field values that are not times, Then the TimeAfterOrEqualTo rule should return error.
+	test.Run("incorrect form field values are not times", func(t *testing.T) {
+		form := url.Values{
+			"input_field": []string{"is not a time"},
+		}
+
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					TimeAfterOrEqualTo(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC)),
+				},
+			},
+		}
+
+		verrs := validations.Validate(form)
+
+		if len(verrs) == 0 {
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
 	})
 }
