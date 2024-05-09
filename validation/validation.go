@@ -17,10 +17,10 @@ type validation struct {
 	Rules []Rule
 }
 
-type validations []validation
+type Validations []validation
 
 // Validate is the main method we will use to perform the validations on a form.
-func (v validations) Validate(form url.Values) Errors {
+func (v Validations) Validate(form url.Values) Errors {
 	verrs := make(map[string][]error)
 	for _, validation := range v {
 		for _, rule := range validation.Rules {
