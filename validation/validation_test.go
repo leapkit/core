@@ -169,6 +169,74 @@ func TestRuleMatchRegex(test *testing.T) {
 	})
 }
 
+func TestRuleEqualTo(test *testing.T) {
+	// Given a form with values less than compared value, Then the EqualTo rule should return no error.
+	test.Run("correct form field value is equal to compared value", func(t *testing.T) {
+		form := url.Values{
+			"input_field": []string{"10.36"},
+		}
+
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					EqualTo(10.36),
+				},
+			},
+		}
+
+		verrs := validations.Validate(form)
+
+		if len(verrs) > 0 {
+			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
+		}
+	})
+
+	// Given a form with values equal to compared value, Then the EqualTo rule should return error.
+	test.Run("incorrect form field value is different to compared value", func(t *testing.T) {
+		form := url.Values{
+			"input_field": []string{"10"},
+		}
+
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					EqualTo(20),
+				},
+			},
+		}
+
+		verrs := validations.Validate(form)
+
+		if len(verrs) == 0 {
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
+		}
+	})
+
+	// Given a form with no number values, Then the EqualTo rule should return error.
+	test.Run("incorrect form field value is not a number", func(t *testing.T) {
+		form := url.Values{
+			"input_field": []string{"invalid value"},
+		}
+
+		validations := Validations{
+			Validation{
+				Field: "input_field",
+				Rules: []Rule{
+					EqualTo(5),
+				},
+			},
+		}
+
+		verrs := validations.Validate(form)
+
+		if len(verrs) == 0 {
+			t.Fatalf("verrs should have errors. verrs=%v", verrs)
+		}
+	})
+}
+
 func TestRuleLessThan(test *testing.T) {
 	// Given a form with values less than compared value, Then the LessThan rule should return no error.
 	test.Run("correct form field value is less to compared value", func(t *testing.T) {

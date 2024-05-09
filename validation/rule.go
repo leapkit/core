@@ -62,6 +62,26 @@ func MatchRegex(re *regexp.Regexp, message ...string) Rule {
 	}
 }
 
+// EqualTo function validates that field values are equal to a compared value.
+func EqualTo(value float64, message ...string) Rule {
+	return func(values []string) error {
+		for _, val := range values {
+			n, err := strconv.ParseFloat(val, 64)
+			if err != nil {
+				return errors.New("is not a number")
+			}
+
+			if n == value {
+				continue
+			}
+
+			return newError(fmt.Sprintf("%s must be equal to than %f.", val, value), message...)
+		}
+
+		return nil
+	}
+}
+
 // LessThan function validates that the field values are less than a value.
 func LessThan(value float64, message ...string) Rule {
 	return func(values []string) error {
