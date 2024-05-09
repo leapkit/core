@@ -82,7 +82,7 @@ func IsUnique(db *sqlx.DB ) validations.Rule {
 }
 
 // ...
-validations := validation.Validations{
-	validation.New("my_awesome_field", IsUnique(db))
+newUserValidation := validation.Validations{
+	validation.New("email", IsUnique(db))
 }
 ```
