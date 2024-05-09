@@ -31,7 +31,7 @@ func Required(message ...string) Rule
 
 // String Rules:
 func Matches(field string, message ...string) Rule
-func MatchRegex(re \*regexp.Regexp, message ...string) Rule
+func MatchRegex(re *regexp.Regexp, message ...string) Rule
 func MinLength(min int, message ...string) Rule
 func MaxLength(max int, message ...string) Rule
 func WithinOptions(options []string, message ...string) Rule
