@@ -3,30 +3,21 @@ title: Form Validation
 index: 3
 ---
 
-Leapkit provides a `validation` package that offers a flexible and reusable way to validate form data
-by defining a set of validation rules that can be applied to form fields.
+Leapkit provides a `validation` package that offers a flexible and reusable way to validate form data by defining a set of validation rules that can be applied to form fields.
 
 ### How to Use
 
-In your code, define a `validation.Validations` variable with a set of validations.
-Then, call the `Validations.Validate()` method, which receives the `url.Values` form and returns
-a `map[string][]error` map with validation errors per form field. Example:
+Validations are a set of rules stablished for different fields passed in the request. You can define these Validations to be used in your http handlers by and call the `Validate()` method passing the `req.Form` and handling the `validation.Errors` returned. Example:
 
 ```go
-form := url.Values{}
-
-validations := validation.Validations{
-	validation.Validation{
-		Field: "my_awesome_field",
-		Rules: []Rule{
-			validations.Required("my custom error"),
-		},
-	},
+newUserValidation := validation.Validations{
+	validation.New("email",validations.Required("email is required")),
+	validation.New("password",validations.Required("password is required")),
 }
 
-verrs := validations.Validate(form)
+verrs := newUserValidation.Validate(req.Form)
 if len(verrs) > 0 {
-	 handle invalid form
+	 // handle validation errors...
 }
 ```
 
@@ -68,13 +59,9 @@ func TimeAfterOrEqualTo(u time.Time, message ...string) Rule
 Alternatively, you can create your own validation rules. Example:
 
 ```go
-var (
-	DB *sqlx.DB
-)
-
-func IsUnique() validations.Rule {
+func IsUnique(db *sqlx.DB ) validations.Rule {
    	return func(emails []string) error {
-  		stmt, err := DB.Prepare("SELECT EXISTS (SELECT 1 FROM users WHERE email = $1)")
+  		stmt, err := db.Prepare("SELECT EXISTS (SELECT 1 FROM users WHERE email = $1)")
   		if err != nil {
  			return err
   		}
@@ -95,13 +82,7 @@ func IsUnique() validations.Rule {
 }
 
 // ...
-
 validations := validation.Validations{
-   	validation.Validation{
-  		Field: "my_awesome_field",
-  		Rules: []Rule{
- 			IsUnique(),
-  		},
-   	},
+	validation.New("my_awesome_field", IsUnique(db))
 }
 ```
