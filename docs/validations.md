@@ -46,6 +46,7 @@ func MaxLength(max int, message ...string) Rule
 func WithinOptions(options []string, message ...string) Rule
 
 // Number Rules:
+func EqualTo(value float64, message ...string) Rule
 func LessThan(value float64, message ...string) Rule
 func LessThanOrEqualTo(value float64, message ...string) Rule
 func GreaterThan(value float64, message ...string) Rule
@@ -62,7 +63,7 @@ func TimeAfter(u time.Time, message ...string) Rule
 func TimeAfterOrEqualTo(u time.Time, message ...string) Rule
 ```
 
-### Custom validation Rules:
+### Custom validation Rules
 
 Alternatively, you can create your own validation rules. Example:
 
