@@ -10,7 +10,8 @@ func Field(field string, rules ...ValidatorFn) fieldValidation {
 	}
 }
 
-func Form(vals ...fieldValidation) fieldValidations {
+// Fields is a convenience method to create a set of field validations.
+func Fields(vals ...fieldValidation) fieldValidations {
 	return fieldValidations(vals)
 }
 

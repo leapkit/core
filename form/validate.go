@@ -7,6 +7,8 @@ import (
 	"github.com/leapkit/core/form/validate"
 )
 
+// validator is an interface that wraps the Validate method
+// for validating form values.
 type validator interface {
 	Validate(req url.Values) validate.Errors
 }

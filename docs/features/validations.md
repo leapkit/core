@@ -10,12 +10,12 @@ Leapkit provides the `form/validate` package that offers a flexible and reusable
 Validations are a set of rules stablished for different fields passed in the request. You can define these Validations to be used in your http handlers by and call the `form.Validate` function passing the `req` (*http.Request) and handling the `validate.Errors` returned. Example:
 
 ```go
-newUserValidation := validate.Form(
+rules := validate.Fields(
 	validate.Field("email", validate.Required("email is required")),
 	validate.Field("password", validate.Required("password is required")),
 )
 
-verrs := form.Validate(req, newUserValidation)
+verrs := form.Validate(req, rules)
 if len(verrs) > 0 {
 	 // handle validation errors...
 }
@@ -83,8 +83,8 @@ func IsUnique(db *sqlx.DB ) func([]string) error {
 }
 
 // ...
-newUserValidation := validation.Form{
+rules := validation.Fields(
 	validation.New("email", validate.Required(), IsUnique(db))
-}
+)
 ...
 ```
