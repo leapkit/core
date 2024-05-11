@@ -1,4 +1,4 @@
-package validation
+package validate
 
 import (
 	"cmp"
@@ -13,12 +13,8 @@ import (
 	"github.com/gofrs/uuid/v5"
 )
 
-// Rule is a condition that must be satisfied by all values in a specific form field.
-// Otherwise the rule will return an error
-type Rule func([]string) error
-
 // Required function validates the form field has no-empty values.
-func Required(message ...string) Rule {
+func Required(message ...string) ValidatorFn {
 	return func(values []string) error {
 		hasEmptyValues := slices.ContainsFunc(values, func(val string) bool {
 			return strings.TrimSpace(val) == ""
@@ -33,7 +29,7 @@ func Required(message ...string) Rule {
 }
 
 // Match function validates the form field values with a string.
-func Matches(field string, message ...string) Rule {
+func Matches(field string, message ...string) ValidatorFn {
 	return func(values []string) error {
 		for _, val := range values {
 			if val == field {
@@ -48,7 +44,7 @@ func Matches(field string, message ...string) Rule {
 }
 
 // MatchRegex function validates the form field values with a regular expression.
-func MatchRegex(re *regexp.Regexp, message ...string) Rule {
+func MatchRegex(re *regexp.Regexp, message ...string) ValidatorFn {
 	return func(values []string) error {
 		for _, val := range values {
 			if re.MatchString(val) {
@@ -63,7 +59,7 @@ func MatchRegex(re *regexp.Regexp, message ...string) Rule {
 }
 
 // EqualTo function validates that field values are equal to a compared value.
-func EqualTo(value float64, message ...string) Rule {
+func EqualTo(value float64, message ...string) ValidatorFn {
 	return func(values []string) error {
 		for _, val := range values {
 			n, err := strconv.ParseFloat(val, 64)
@@ -83,7 +79,7 @@ func EqualTo(value float64, message ...string) Rule {
 }
 
 // LessThan function validates that the field values are less than a value.
-func LessThan(value float64, message ...string) Rule {
+func LessThan(value float64, message ...string) ValidatorFn {
 	return func(values []string) error {
 		for _, val := range values {
 			n, err := strconv.ParseFloat(val, 64)
@@ -103,7 +99,7 @@ func LessThan(value float64, message ...string) Rule {
 }
 
 // LessThanOrEqualTo function validates that the field values are less than or equal to a value.
-func LessThanOrEqualTo(value float64, message ...string) Rule {
+func LessThanOrEqualTo(value float64, message ...string) ValidatorFn {
 	return func(values []string) error {
 		for _, val := range values {
 			n, err := strconv.ParseFloat(val, 64)
@@ -123,7 +119,7 @@ func LessThanOrEqualTo(value float64, message ...string) Rule {
 }
 
 // GreaterThan function validates that the field values are greater than a value.
-func GreaterThan(value float64, message ...string) Rule {
+func GreaterThan(value float64, message ...string) ValidatorFn {
 	return func(values []string) error {
 		for _, val := range values {
 			n, err := strconv.ParseFloat(val, 64)
@@ -143,7 +139,7 @@ func GreaterThan(value float64, message ...string) Rule {
 }
 
 // GreaterThanOrEqualTo function validates that the field values are greater than or equal to a value.
-func GreaterThanOrEqualTo(value float64, message ...string) Rule {
+func GreaterThanOrEqualTo(value float64, message ...string) ValidatorFn {
 	return func(values []string) error {
 		for _, val := range values {
 			n, err := strconv.ParseFloat(val, 64)
@@ -163,7 +159,7 @@ func GreaterThanOrEqualTo(value float64, message ...string) Rule {
 }
 
 // MinLength function validates that the values' lengths are greater than or equal to min.
-func MinLength(min int, message ...string) Rule {
+func MinLength(min int, message ...string) ValidatorFn {
 	return func(values []string) error {
 		for _, val := range values {
 			if len(strings.TrimSpace(val)) >= min {
@@ -178,7 +174,7 @@ func MinLength(min int, message ...string) Rule {
 }
 
 // MaxLength function validates that the values' lengths are less than or equal to max.
-func MaxLength(max int, message ...string) Rule {
+func MaxLength(max int, message ...string) ValidatorFn {
 	return func(values []string) error {
 		for _, val := range values {
 			if len(strings.TrimSpace(val)) <= max {
@@ -193,7 +189,7 @@ func MaxLength(max int, message ...string) Rule {
 }
 
 // WithinOptions function validates that values are in the option list.
-func WithinOptions(options []string, message ...string) Rule {
+func WithinOptions(options []string, message ...string) ValidatorFn {
 	return func(values []string) error {
 		for _, val := range values {
 			if slices.Contains(options, val) {
@@ -209,7 +205,7 @@ func WithinOptions(options []string, message ...string) Rule {
 }
 
 // ValidUUID function validates that the values are valid UUIDs.
-func ValidUUID(message ...string) Rule {
+func ValidUUID(message ...string) ValidatorFn {
 	return func(values []string) error {
 		for _, val := range values {
 			if !uuid.FromStringOrNil(val).IsNil() {
@@ -224,7 +220,7 @@ func ValidUUID(message ...string) Rule {
 }
 
 // TimeEqualTo function validates that the values are equal an specific time.
-func TimeEqualTo(u time.Time, message ...string) Rule {
+func TimeEqualTo(u time.Time, message ...string) ValidatorFn {
 	return func(values []string) error {
 		for _, value := range values {
 			t, err := parseTime(value)
@@ -244,7 +240,7 @@ func TimeEqualTo(u time.Time, message ...string) Rule {
 }
 
 // TimeBefore function validates that the values are before an specific time.
-func TimeBefore(u time.Time, message ...string) Rule {
+func TimeBefore(u time.Time, message ...string) ValidatorFn {
 	return func(values []string) error {
 		for _, value := range values {
 			t, err := parseTime(value)
@@ -264,7 +260,7 @@ func TimeBefore(u time.Time, message ...string) Rule {
 }
 
 // TimeBeforeOrEqualTo function validates that the values are before or equal to an specific time.
-func TimeBeforeOrEqualTo(u time.Time, message ...string) Rule {
+func TimeBeforeOrEqualTo(u time.Time, message ...string) ValidatorFn {
 	return func(values []string) error {
 		for _, value := range values {
 			t, err := parseTime(value)
@@ -284,7 +280,7 @@ func TimeBeforeOrEqualTo(u time.Time, message ...string) Rule {
 }
 
 // TimeAfter function validates that the values are after an specific time.
-func TimeAfter(u time.Time, message ...string) Rule {
+func TimeAfter(u time.Time, message ...string) ValidatorFn {
 	return func(values []string) error {
 		for _, val := range values {
 			t, err := parseTime(val)
@@ -304,7 +300,7 @@ func TimeAfter(u time.Time, message ...string) Rule {
 }
 
 // TimeAfterOrEqualTo function validates that the values are after or equal to an specific time.
-func TimeAfterOrEqualTo(u time.Time, message ...string) Rule {
+func TimeAfterOrEqualTo(u time.Time, message ...string) ValidatorFn {
 	return func(values []string) error {
 		for _, val := range values {
 			t, err := parseTime(val)
