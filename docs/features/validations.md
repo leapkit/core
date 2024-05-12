@@ -1,11 +1,11 @@
 ---
-title: Validation
+title: Validations
 index: 3
 ---
 
 Leapkit provides the `form/validate` package that offers a flexible and reusable way to validate form data by defining a set of validation rules that can be applied to form fields.
 
-### How to Use
+## How to Use
 Validations are a set of rules stablished for different fields passed in the request. You can define these Validations to be used in your http handlers by and call the `form.Validate` function passing the `req` (*http.Request) and handling the `validate.Errors` returned. Example:
 
 ```go
