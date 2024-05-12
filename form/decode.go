@@ -1,6 +1,7 @@
 package form
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -18,8 +19,8 @@ var (
 func init() {
 	// Register custom and common type decoder
 	// functions.
-	decoder.RegisterCustomTypeFunc(DecodeUUID, uuid.UUID{})
-	decoder.RegisterCustomTypeFunc(DecodeUUIDSlice, []uuid.UUID{})
+	decoder.RegisterCustomTypeFunc(decodeUUID, uuid.UUID{})
+	decoder.RegisterCustomTypeFunc(decodeUUIDSlice, []uuid.UUID{})
 }
 
 // RegisterCustomTypeFunc registers a custom type decoder func for a type.
@@ -53,4 +54,33 @@ func Decode(r *http.Request, dst interface{}) error {
 
 	err := decoder.Decode(dst, r.Form)
 	return err
+}
+
+// decodeUUID a single uuid from a string
+// and returns an error if there is a problem
+func decodeUUID(vals []string) (interface{}, error) {
+	uu, err := uuid.FromString(vals[0])
+	if err != nil {
+		err = fmt.Errorf("error parsing uuid: %w", err)
+	}
+
+	return uu, err
+}
+
+// decodeUUIDSlice decodes a slice of uuids from a string
+// and returns an error if there is a problem
+func decodeUUIDSlice(vals []string) (interface{}, error) {
+	var uus []uuid.UUID
+
+	for _, val := range vals {
+		uuid, err := uuid.FromString(val)
+		if err != nil {
+			err = fmt.Errorf("error parsing uuid: %w", err)
+			return nil, err
+		}
+
+		uus = append(uus, uuid)
+	}
+
+	return uus, nil
 }

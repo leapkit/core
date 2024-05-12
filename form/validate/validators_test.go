@@ -1,69 +1,54 @@
-package validation
+package validate_test
 
 import (
 	"net/url"
 	"regexp"
 	"testing"
 	"time"
+
+	"github.com/leapkit/core/form/validate"
 )
 
 func TestRuleRequired(test *testing.T) {
-	// Given a form with not-empty field values, Then the required rule should return no error.
+	// Given a form with not-empty field values, Then the validate.Required rule should return no error.
 	test.Run("correct form has field values", func(t *testing.T) {
 		form := url.Values{
 			"input_field": []string{"value_1"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					Required(),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.Required()),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) > 0 {
 			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
 	})
 
-	// Given a form without field, Then the required rule should return error.
+	// Given a form without field, Then the validate.Required rule should return error.
 	test.Run("incorrect form does not have field", func(t *testing.T) {
 		form := url.Values{}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					Required(),
-				},
-			},
-		}
+		validator := validate.Fields(
+			validate.Field("input_field", validate.Required()),
+		)
 
-		verrs := validations.Validate(form)
-
+		verrs := validator.Validate(form)
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
 	})
 
-	// Given a form with at least one empty field value, Then the required rule should return error
+	// Given a form with at least one empty field value, Then the validate.Required rule should return error
 	test.Run("incorrect form field has at least one empty value", func(t *testing.T) {
 		form := url.Values{
 			"input_field": []string{"value_1", "", "value_3"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					Required(),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.Required()),
+		)
 
 		verrs := validations.Validate(form)
 
@@ -80,19 +65,11 @@ func TestRuleMatches(test *testing.T) {
 			"input_field": []string{"value_1"},
 		}
 
-		field := "value_1"
-
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					Matches(field),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.Matches("value_1")),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) > 0 {
 			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
@@ -104,16 +81,9 @@ func TestRuleMatches(test *testing.T) {
 			"input_field": []string{"value_1"},
 		}
 
-		field := "value_2"
-
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					Matches(field),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.Matches("value_2")),
+		)
 
 		verrs := validations.Validate(form)
 
@@ -130,14 +100,9 @@ func TestRuleMatchRegex(test *testing.T) {
 			"input_field": []string{"seafood"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					MatchRegex(regexp.MustCompile(`foo.*`)),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.MatchRegex(regexp.MustCompile(`foo.*`))),
+		)
 
 		verrs := validations.Validate(form)
 
@@ -152,14 +117,9 @@ func TestRuleMatchRegex(test *testing.T) {
 			"input_field": []string{"seafood"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					MatchRegex(regexp.MustCompile(`bar.*`)),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.MatchRegex(regexp.MustCompile(`bar.*`))),
+		)
 
 		verrs := validations.Validate(form)
 
@@ -176,17 +136,11 @@ func TestRuleEqualTo(test *testing.T) {
 			"input_field": []string{"10.36"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					EqualTo(10.36),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.EqualTo(10.36)),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) > 0 {
 			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
@@ -198,14 +152,9 @@ func TestRuleEqualTo(test *testing.T) {
 			"input_field": []string{"10"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					EqualTo(20),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.EqualTo(20)),
+		)
 
 		verrs := validations.Validate(form)
 
@@ -220,17 +169,11 @@ func TestRuleEqualTo(test *testing.T) {
 			"input_field": []string{"invalid value"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					EqualTo(5),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.EqualTo(5), validate.Required()),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
@@ -244,17 +187,11 @@ func TestRuleLessThan(test *testing.T) {
 			"input_field": []string{"10"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					LessThan(20),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.LessThan(20)),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) > 0 {
 			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
@@ -266,17 +203,11 @@ func TestRuleLessThan(test *testing.T) {
 			"input_field": []string{"10"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					LessThan(10),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.LessThan(10)),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
@@ -288,17 +219,11 @@ func TestRuleLessThan(test *testing.T) {
 			"input_field": []string{"10"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					LessThan(5),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.LessThan(5)),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
@@ -310,17 +235,11 @@ func TestRuleLessThan(test *testing.T) {
 			"input_field": []string{"invalid value"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					LessThan(5),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.LessThan(5)),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
@@ -334,17 +253,11 @@ func TestRuleLessThanOrEqualTo(test *testing.T) {
 			"input_field": []string{"10"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					LessThanOrEqualTo(20),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.LessThanOrEqualTo(20)),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) > 0 {
 			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
@@ -356,14 +269,9 @@ func TestRuleLessThanOrEqualTo(test *testing.T) {
 			"input_field": []string{"10"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					LessThanOrEqualTo(10),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.LessThanOrEqualTo(10)),
+		)
 
 		verrs := validations.Validate(form)
 		if len(verrs) > 0 {
@@ -377,17 +285,11 @@ func TestRuleLessThanOrEqualTo(test *testing.T) {
 			"input_field": []string{"10"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					LessThanOrEqualTo(5),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.LessThanOrEqualTo(5)),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
@@ -399,17 +301,11 @@ func TestRuleLessThanOrEqualTo(test *testing.T) {
 			"input_field": []string{"invalid value"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					LessThanOrEqualTo(5),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.LessThanOrEqualTo(5)),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
@@ -423,17 +319,11 @@ func TestRuleGreaterThan(test *testing.T) {
 			"input_field": []string{"10"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					GreaterThan(5),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.GreaterThan(5)),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) > 0 {
 			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
@@ -445,17 +335,11 @@ func TestRuleGreaterThan(test *testing.T) {
 			"input_field": []string{"10"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					GreaterThan(10),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.GreaterThan(10)),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
@@ -467,17 +351,11 @@ func TestRuleGreaterThan(test *testing.T) {
 			"input_field": []string{"10"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					GreaterThan(20),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.GreaterThan(20)),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
@@ -489,17 +367,11 @@ func TestRuleGreaterThan(test *testing.T) {
 			"input_field": []string{"invalid value"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					GreaterThan(5),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.GreaterThan(5)),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
@@ -513,17 +385,11 @@ func TestRuleGreaterThanOrEqualTo(test *testing.T) {
 			"input_field": []string{"10"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					GreaterThanOrEqualTo(5),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.GreaterThanOrEqualTo(5)),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) > 0 {
 			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
@@ -535,17 +401,11 @@ func TestRuleGreaterThanOrEqualTo(test *testing.T) {
 			"input_field": []string{"10"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					GreaterThanOrEqualTo(10),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.GreaterThanOrEqualTo(10)),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) > 0 {
 			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
@@ -557,17 +417,11 @@ func TestRuleGreaterThanOrEqualTo(test *testing.T) {
 			"input_field": []string{"10"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					GreaterThanOrEqualTo(20),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.GreaterThanOrEqualTo(20)),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
@@ -579,17 +433,11 @@ func TestRuleGreaterThanOrEqualTo(test *testing.T) {
 			"input_field": []string{"invalid value"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					GreaterThanOrEqualTo(5),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.GreaterThanOrEqualTo(5)),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
@@ -603,17 +451,11 @@ func TestRuleMinLength(test *testing.T) {
 			"input_field": []string{"lorem ipsum"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					MinLength(3),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.MinLength(3)),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) > 0 {
 			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
@@ -625,17 +467,11 @@ func TestRuleMinLength(test *testing.T) {
 			"input_field": []string{"lorem ipsum"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					MinLength(11),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.MinLength(11)),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) > 0 {
 			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
@@ -647,17 +483,11 @@ func TestRuleMinLength(test *testing.T) {
 			"input_field": []string{"lo"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					MinLength(11),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.MinLength(11)),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
@@ -671,17 +501,11 @@ func TestRuleMaxLength(test *testing.T) {
 			"input_field": []string{"lorem ipsum"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					MaxLength(20),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.MaxLength(20)),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) > 0 {
 			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
@@ -693,17 +517,11 @@ func TestRuleMaxLength(test *testing.T) {
 			"input_field": []string{"lorem ipsum"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					MaxLength(11),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.MaxLength(11)),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) > 0 {
 			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
@@ -715,17 +533,11 @@ func TestRuleMaxLength(test *testing.T) {
 			"input_field": []string{"lorem ipsum"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					MaxLength(5),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.MaxLength(5)),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
@@ -739,17 +551,11 @@ func TestRuleWithinOptions(test *testing.T) {
 			"input_field": []string{"value_1", "value_2"},
 		}
 
-		valdiations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					WithinOptions([]string{"value_1", "value_2", "value_3"}),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.WithinOptions([]string{"value_1", "value_2", "value_3"})),
+		)
 
-		verrs := valdiations.Validate(form)
-
+		verrs := validations.Validate(form)
 		if len(verrs) > 0 {
 			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
@@ -761,17 +567,11 @@ func TestRuleWithinOptions(test *testing.T) {
 			"input_field": []string{"value_1", "value_4"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					WithinOptions([]string{"value_1", "value_2", "value_3"}),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.WithinOptions([]string{"value_1", "value_2", "value_3"})),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
@@ -785,17 +585,11 @@ func TestRuleValidUUID(test *testing.T) {
 			"input_field": []string{"6ad99ef2-fe43-4c42-b288-aef9040b5388"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					ValidUUID(),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.ValidUUID()),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) > 0 {
 			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
@@ -807,17 +601,11 @@ func TestRuleValidUUID(test *testing.T) {
 			"input_field": []string{"no-uuid"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					ValidUUID(),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.ValidUUID()),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
@@ -831,17 +619,11 @@ func TestRuleTimeEqualTo(test *testing.T) {
 			"input_field": []string{"2026-06-26"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					TimeEqualTo(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC)),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.TimeEqualTo(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC))),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) > 0 {
 			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
@@ -853,17 +635,11 @@ func TestRuleTimeEqualTo(test *testing.T) {
 			"input_field": []string{"2026-06-26"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					TimeEqualTo(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC)),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.TimeEqualTo(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC))),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
@@ -875,17 +651,11 @@ func TestRuleTimeEqualTo(test *testing.T) {
 			"input_field": []string{"is not a time"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					TimeEqualTo(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC)),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.TimeEqualTo(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC))),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
@@ -899,17 +669,11 @@ func TestRuleTimeBefore(test *testing.T) {
 			"input_field": []string{"2026-06-26"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					TimeBefore(time.Date(2028, time.June, 26, 0, 0, 0, 0, time.UTC)),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.TimeBefore(time.Date(2028, time.June, 26, 0, 0, 0, 0, time.UTC))),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) > 0 {
 			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
@@ -921,17 +685,11 @@ func TestRuleTimeBefore(test *testing.T) {
 			"input_field": []string{"2026-06-26"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					TimeBefore(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC)),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.TimeBefore(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC))),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
@@ -943,17 +701,11 @@ func TestRuleTimeBefore(test *testing.T) {
 			"input_field": []string{"2026-06-26"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					TimeBeforeOrEqualTo(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC)),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.TimeBeforeOrEqualTo(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC))),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
@@ -965,17 +717,11 @@ func TestRuleTimeBefore(test *testing.T) {
 			"input_field": []string{"is not a time"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					TimeBefore(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC)),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.TimeBefore(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC))),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
@@ -989,17 +735,11 @@ func TestRuleTimeBeforeOrEqualTo(test *testing.T) {
 			"input_field": []string{"2026-06-26"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					TimeBeforeOrEqualTo(time.Date(2028, time.June, 26, 0, 0, 0, 0, time.UTC)),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.TimeBeforeOrEqualTo(time.Date(2028, time.June, 26, 0, 0, 0, 0, time.UTC))),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) > 0 {
 			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
@@ -1011,17 +751,11 @@ func TestRuleTimeBeforeOrEqualTo(test *testing.T) {
 			"input_field": []string{"2026-06-26"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					TimeBeforeOrEqualTo(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC)),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.TimeBeforeOrEqualTo(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC))),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) > 0 {
 			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
@@ -1033,17 +767,11 @@ func TestRuleTimeBeforeOrEqualTo(test *testing.T) {
 			"input_field": []string{"2026-06-26"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					TimeBeforeOrEqualTo(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC)),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.TimeBeforeOrEqualTo(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC))),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
@@ -1055,17 +783,11 @@ func TestRuleTimeBeforeOrEqualTo(test *testing.T) {
 			"input_field": []string{"is not a time"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					TimeBeforeOrEqualTo(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC)),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.TimeBeforeOrEqualTo(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC))),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
@@ -1079,17 +801,11 @@ func TestRuleTimeAfter(test *testing.T) {
 			"input_field": []string{"2026-06-26"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					TimeAfter(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC)),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.TimeAfter(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC))),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) > 0 {
 			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
@@ -1101,17 +817,11 @@ func TestRuleTimeAfter(test *testing.T) {
 			"input_field": []string{"2026-06-26"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					TimeAfter(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC)),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.TimeAfter(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC))),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
@@ -1123,17 +833,11 @@ func TestRuleTimeAfter(test *testing.T) {
 			"input_field": []string{"2026-06-26"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					TimeAfter(time.Date(2028, time.June, 26, 0, 0, 0, 0, time.UTC)),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.TimeAfter(time.Date(2028, time.June, 26, 0, 0, 0, 0, time.UTC))),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
@@ -1145,17 +849,11 @@ func TestRuleTimeAfter(test *testing.T) {
 			"input_field": []string{"is not a time"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					TimeAfter(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC)),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.TimeAfter(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC))),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
@@ -1169,17 +867,11 @@ func TestRuleTimeAfterOrEqualTo(test *testing.T) {
 			"input_field": []string{"2026-06-26"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					TimeAfterOrEqualTo(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC)),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.TimeAfterOrEqualTo(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC))),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) > 0 {
 			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
@@ -1191,17 +883,11 @@ func TestRuleTimeAfterOrEqualTo(test *testing.T) {
 			"input_field": []string{"2026-06-26"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					TimeAfterOrEqualTo(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC)),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.TimeAfterOrEqualTo(time.Date(2026, time.June, 26, 0, 0, 0, 0, time.UTC))),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) > 0 {
 			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
 		}
@@ -1213,17 +899,11 @@ func TestRuleTimeAfterOrEqualTo(test *testing.T) {
 			"input_field": []string{"2026-06-26"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					TimeAfterOrEqualTo(time.Date(2028, time.June, 26, 0, 0, 0, 0, time.UTC)),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.TimeAfterOrEqualTo(time.Date(2028, time.June, 26, 0, 0, 0, 0, time.UTC))),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
@@ -1235,17 +915,11 @@ func TestRuleTimeAfterOrEqualTo(test *testing.T) {
 			"input_field": []string{"is not a time"},
 		}
 
-		validations := Validations{
-			Validation{
-				Field: "input_field",
-				Rules: []Rule{
-					TimeAfterOrEqualTo(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC)),
-				},
-			},
-		}
+		validations := validate.Fields(
+			validate.Field("input_field", validate.TimeAfterOrEqualTo(time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC))),
+		)
 
 		verrs := validations.Validate(form)
-
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
 		}
