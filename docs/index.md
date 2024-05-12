@@ -9,7 +9,7 @@ There are two big components of LeapKit, the [LeapKit Core](https://github.com/l
 
 ## LeapKit Core
 
-The [LeapKit Core](https://github.com/leapkit/core) contains the Go libraries that facilitate the web development. this repo contains the package that accelerate the web development with LeapKit. Things such as Form binding, Form validating, Database migrations, and routing helpers, and hot code reloading live in this package.
+The [LeapKit Core](https://github.com/leapkit/core) contains the Go libraries that facilitate the web development. this repo contains the package that accelerate the web development with LeapKit. Things such as form binding, form validating, database migrations, and routing helpers, and hot code reloading live in this package.
 
 ## LeapKit Template
 The [LeapKit Template](https://github.com/leapkit/template) contains a starting point folder structure using the LeapKit core that uses the LeapKit core and the standard library to provide common functionallity.
