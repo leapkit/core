@@ -11,6 +11,5 @@ There are two main components of LeapKit, the LeapKit Core and the LeapKit Templ
 
 The LeapKit Core contains the Go libraries that facilitate the web development. this repo contains the package that accelerate the web development with LeapKit.
 
-
 ## LeapKit Template
 The LeapKit Template contains a starting point folder structure using the LeapKit core. It provides some CLI commands to facilitate the web development of your apps, the template can be copied and modified with the `gonew` command.

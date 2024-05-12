@@ -40,7 +40,7 @@ quick_links:
 # cta:
 # text: "Star on Github"
 # link: "https://github.com/paganotoni/doco"
+
 # Shows on each of the documentation pages
 # $YEAR is replaced with the current year.
-
 copy: "© $YEAR LeapKit"
