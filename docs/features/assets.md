@@ -1,4 +1,4 @@
 ---
-index: 1
-title: "Database"
+index: 2
+title: "Asset Pipeline"
 ---
