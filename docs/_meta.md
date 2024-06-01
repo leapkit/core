@@ -1,5 +1,4 @@
 ---
-
 name: Leapkit
 description: "LeapKit a collection of tools to help you build your next application with Go"
 keywords: "golange,tooling,kit,leapkit,leap,go"
@@ -44,3 +43,4 @@ quick_links:
 # Shows on each of the documentation pages
 # $YEAR is replaced with the current year.
 copy: "© $YEAR LeapKit"
+---
