@@ -29,10 +29,10 @@ quick_links:
   icon: "menu_book"
 - text: "Template"
   link: "https://github.com/leapkit/template"
-  icon: "code"
+  icon: "developer_guide"
 - text: "Core"
   link: "https://github.com/leapkit/core"
-  icon: "code"
+  icon: "hub"
 
 
 # CTA button shows on the top right of the site.

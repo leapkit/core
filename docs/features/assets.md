@@ -1,4 +1,4 @@
 ---
 index: 2
-title: "Asset Pipeline"
+title: "Assets"
 ---
