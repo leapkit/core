@@ -38,7 +38,7 @@ A field can have multiple validations specified (Required, Length, Regex ...) an
 ### Errors
 The output from the Validate function is a `validate.Errors` variable, which internally is a `map[string][]error` and provides some helpful functions. This structure allows to return multiple errors for a single field.
 
-## Built-in Rules
+### Built-in Rules
 
 You can build your set of rules for each validation by using the package's built-in functions.
 
@@ -71,7 +71,7 @@ func TimeAfter(u time.Time, message ...string) Rule
 func TimeAfterOrEqualTo(u time.Time, message ...string) Rule
 ```
 
-## Custom validation Rules
+### Custom validation Rules
 
 Alternatively, you can create your own validation functions. As long as these follow the `validate.ValidatorFn` (`func([]string) error`) signature you can apply these to fields. Like in the following example:
 
