@@ -110,7 +110,7 @@ func Test_Router_Middleware(t *testing.T) {
 		s.Use(m)
 
 		s.Group("/hello", func(rg server.Router) {
-			rg.ClearMiddlewares()
+			rg.ClearMiddleware()
 			rg.HandleFunc("GET /world", func(w http.ResponseWriter, r *http.Request) {
 				message, ok := r.Context().Value("message").(string)
 				if !ok {
@@ -149,7 +149,7 @@ func Test_Router_Middleware(t *testing.T) {
 			})
 
 			r.Group("/hello/", func(r server.Router) {
-				r.ClearMiddlewares()
+				r.ClearMiddleware()
 				r.Use(server.InCtxMiddleware("message", "Hello people!"))
 				r.HandleFunc("GET /people/{$}", func(w http.ResponseWriter, r *http.Request) {
 					message, ok := r.Context().Value("message").(string)
