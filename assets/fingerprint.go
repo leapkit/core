@@ -44,17 +44,14 @@ func (m *manager) PathFor(fname string) (string, error) {
 	hashString := hex.EncodeToString(hash[:])
 
 	// Add the hash to the filename
-	filename := path.Base(normalized)
 	ext := path.Ext(normalized)
-	newFilename := filename[:len(filename)-len(ext)] + "-" + hashString + ext
+	filename := strings.TrimSuffix(normalized, ext)
+	filename += "-" + hashString + ext
 
 	m.fmut.Lock()
 	defer m.fmut.Unlock()
-	m.fileToHash[normalized] = newFilename
-	m.HashToFile[newFilename] = normalized
+	m.fileToHash[normalized] = filename
+	m.HashToFile[filename] = normalized
 
-	result = path.Join(path.Dir(normalized), newFilename)
-	result = withPrefix(result)
-
-	return result, nil
+	return withPrefix(filename), nil
 }
