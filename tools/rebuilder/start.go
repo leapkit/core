@@ -1,7 +1,4 @@
-// package globes manages hot code reloading for the application
-// it listen for changes in the application directory and restarts
-// the application when a change is detected.
-package gloves
+package rebuilder
 
 // Starts the application and listen for changes.
 func Start(path string, options ...Option) error {

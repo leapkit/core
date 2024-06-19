@@ -1,7 +1,6 @@
 package render
 
 import (
-	"github.com/leapkit/core/hctx"
 	"github.com/leapkit/core/internal/helpers/content"
 	"github.com/leapkit/core/internal/helpers/debug"
 	"github.com/leapkit/core/internal/helpers/encoders"
@@ -10,6 +9,7 @@ import (
 	"github.com/leapkit/core/internal/helpers/iterators"
 	"github.com/leapkit/core/internal/helpers/meta"
 	"github.com/leapkit/core/internal/helpers/text"
+	"github.com/leapkit/core/render/hctx"
 )
 
 // AllHelpers contains all of the default helpers for

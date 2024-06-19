@@ -1,4 +1,4 @@
-package gloves
+package rebuilder
 
 type Option func(*configuration)
 

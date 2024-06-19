@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/leapkit/core/hctx"
 	"github.com/leapkit/core/internal/plush/ast"
+	"github.com/leapkit/core/render/hctx"
 )
 
 type ErrUnknownIdentifier struct {
