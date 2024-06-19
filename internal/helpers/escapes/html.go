@@ -3,7 +3,7 @@ package escapes
 import (
 	"html/template"
 
-	"github.com/leapkit/core/hctx"
+	"github.com/leapkit/core/render/hctx"
 )
 
 // HTMLEscape will escape a string for HTML

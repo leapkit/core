@@ -5,7 +5,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/leapkit/core/hctx"
+	"github.com/leapkit/core/render/hctx"
 )
 
 var _ hctx.HelperContext = NewContext()

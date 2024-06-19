@@ -1,8 +1,8 @@
 package plush
 
 import (
-	"github.com/leapkit/core/hctx"
 	"github.com/leapkit/core/internal/plush/ast"
+	"github.com/leapkit/core/render/hctx"
 
 	"github.com/leapkit/core/internal/plush/parser"
 )

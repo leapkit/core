@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/leapkit/core/hctx"
 	"github.com/leapkit/core/internal/helpers/text"
 	"github.com/leapkit/core/internal/plush"
+	"github.com/leapkit/core/render/hctx"
 	"github.com/stretchr/testify/require"
 )
 
@@ -276,8 +276,6 @@ func Test_PartialHelper_Javascript_With_HTML_Partial(t *testing.T) {
 	r.NoError(err)
 	r.Equal(`alert('\u003Cdiv\u003E\\u003Cspan\\u003EFORM\\u003C/span\\u003E\u003C/div\u003E');`, string(html))
 }
-
-
 
 func Test_PartialHelper_NoDefaultHelperOverride(t *testing.T) {
 	r := require.New(t)

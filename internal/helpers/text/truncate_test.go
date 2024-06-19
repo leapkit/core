@@ -3,7 +3,7 @@ package text
 import (
 	"testing"
 
-	"github.com/leapkit/core/hctx"
+	"github.com/leapkit/core/render/hctx"
 	"github.com/stretchr/testify/require"
 )
 

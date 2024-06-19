@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/leapkit/core/hctx"
 	"github.com/leapkit/core/internal/plush/ast"
+	"github.com/leapkit/core/render/hctx"
 )
 
 // Making sure that the interface is implemented
