@@ -15,13 +15,12 @@ func runManager(changed chan bool) {
 	run := func(ctx context.Context, path string) {
 		// Build the application
 		cmd := exec.CommandContext(ctx, "go", "build")
-		cmd.Args = append(cmd.Args, "-o", "bin/app", path)
+		cmd.Args = append(cmd.Args, "-o", "bin/app", "-v", path)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 
-		err := cmd.Run()
-		if err != nil {
-			fmt.Println(err)
+		if err := cmd.Run(); err != nil {
+			fmt.Println("[error]", err)
 			return
 		}
 
@@ -30,7 +29,10 @@ func runManager(changed chan bool) {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Stdin = os.Stdin
-		cmd.Run()
+
+		if err := cmd.Run(); err != nil {
+			fmt.Println("[error] running:", err)
+		}
 	}
 
 	go run(ctx, config.path)
