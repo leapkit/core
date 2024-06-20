@@ -10,7 +10,7 @@ To get started with LeapKit the [template](https://github.com/leapkit/template) 
 To generate your project you can use `gonew` to copy the template and generate the necessary files for your project. The following command will generate a new project called `superapp` in the current directory.
 
 ```
-go run rsc.io/tmp/gonew@latest github.com/leapkit/template@v1.1.5 superapp
+go run rsc.io/tmp/gonew@latest github.com/leapkit/template@v1.1.8 superapp
 ```
 
 ### Setup
