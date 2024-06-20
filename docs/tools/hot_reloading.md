@@ -3,21 +3,21 @@ title: Hot reloading
 index: 1
 ---
 
-You can include the hot reloading feature in your app by using the `gloves` package, which enables us to reload our application in a development environment.
+You can include the hot reloading feature in your app by using the `rebuilder` package, which enables us to reload our application in a development environment.
 
 ## How to Use
 
-Firstly, you need to create another entry point in your app in which this package will live, for instance, `./cmd/dev/main.go`. Then, in the `main` function, let's make use of the `gloves.Start()` function, setting the main entry path as the first parameter:
+Firstly, you need to create another entry point in your app in which this package will live, for instance, `./cmd/dev/main.go`. Then, in the `main` function, let's make use of the `rebuilder.Start()` function, setting the main entry path as the first parameter:
 
 ```go
 // ./cmd/dev/main.go
 
 package main
 
-import "github.com/leapkit/core/gloves"
+import "github.com/leapkit/core/rebuilder"
 
 func main() {
-	gloves.Start("./cmd/app/main.go")
+	rebuilder.Start("./cmd/app/main.go")
 }
 ```
 
@@ -25,27 +25,27 @@ func main() {
 
 The `Start` function allows setting options to react when files are changed in your project.
 
-### `gloves.WatchExtension`
+### `rebuilder.WatchExtension`
 
 This option allows us to configure the package to listen for changes in the files with the extension you specify and reload the application accordingly. For instance:
 
 ```go
-gloves.Start("./cmd/app/main.go",
-    gloves.WatchExtension(".go", ".html"),
+rebuilder.Start("./cmd/app/main.go",
+    rebuilder.WatchExtension(".go", ".html"),
 )
 ```
 
-### `gloves.ExcludePaths`
+### `rebuilder.ExcludePaths`
 
 This option configures the package to prevent reloading the app when any file within any of the paths specified changes. For instance:
 
 ```go
-gloves.Start("./cmd/app/main.go",
-    gloves.ExcludePaths("./internal/test/")
+rebuilder.Start("./cmd/app/main.go",
+    rebuilder.ExcludePaths("./internal/test/")
 )
 ```
 
-### `gloves.WithRunner`
+### `rebuilder.WithRunner`
 
 This option enables you to add runners, which are functions with the signature func(), and are executed each time the app refreshes.
 
@@ -56,8 +56,8 @@ func myAwesomeRun() {
 }
 
 // ...
-gloves.Start("./cmd/app/main.go",
-    gloves.WithRunner(myAwesomeRun)
+rebuilder.Start("./cmd/app/main.go",
+    rebuilder.WithRunner(myAwesomeRun)
 )
 ```
 
