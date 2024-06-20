@@ -26,7 +26,7 @@ PORT=8080
 Leapkit supports multi-line values by using the quoted string syntax:
 
 ```.env
-KEY="-----BEGIN RSA PRIVATE KEY-----
+GITHUB_SECRET_KEY="-----BEGIN RSA PRIVATE KEY-----
 MIIEpAIBAAKCAQEAqTmwQppL07nBl/0TEQ5sHcqj/Iz9BmuaaEu26jMXYt1QttHn
 -----END RSA PRIVATE KEY-----"
 ```
