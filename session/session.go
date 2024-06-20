@@ -45,7 +45,7 @@ type session struct {
 func (s *session) Register(w http.ResponseWriter, r *http.Request) {
 	session := s.session(r)
 
-	*r = *r.WithContext(context.WithValue(r.Context(), ctxKey, session))
+	r = r.WithContext(context.WithValue(r.Context(), ctxKey, session))
 
 	w = &saver{
 		w:     w,
