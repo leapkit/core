@@ -25,10 +25,11 @@ func WithPort(port string) Option {
 	}
 }
 
-func WithSession(session session.Session) Option {
+func WithSession(secret, name string) Option {
 	return func(m *mux) {
 		m.Use(func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				session := session.New(secret, name)
 				session.Register(w, r)
 
 				next.ServeHTTP(w, r)
