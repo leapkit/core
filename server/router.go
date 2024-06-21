@@ -95,9 +95,10 @@ func (rg *router) Folder(prefix string, fs fs.FS) {
 // and middleware that should be executed for all the handlers in the group
 func (rg *router) Group(prefix string, rfn func(rg Router)) {
 	group := &router{
-		prefix:     path.Join(rg.prefix, prefix),
-		mux:        rg.mux,
-		middleware: rg.middleware,
+		prefix:         path.Join(rg.prefix, prefix),
+		mux:            rg.mux,
+		baseMiddleware: rg.baseMiddleware,
+		middleware:     rg.middleware,
 	}
 
 	rfn(group)
