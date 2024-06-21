@@ -16,7 +16,8 @@ func (a *adapter) Setup() error {
 // on the migrations table.
 func (a *adapter) Run(timestamp, sql string) error {
 	var exists bool
-	err := a.conn.Get(&exists, "SELECT EXISTS (SELECT 1 FROM schema_migrations WHERE timestamp = $1)", timestamp)
+	row := a.conn.QueryRow("SELECT EXISTS (SELECT 1 FROM schema_migrations WHERE timestamp = $1)", timestamp)
+	err := row.Scan(&exists)
 	if err != nil {
 		return fmt.Errorf("error running migration: %w", err)
 	}

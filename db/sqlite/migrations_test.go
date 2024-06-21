@@ -1,17 +1,17 @@
 package sqlite_test
 
 import (
+	"database/sql"
 	"path/filepath"
 	"testing"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/leapkit/core/db/sqlite"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 func TestSetup(t *testing.T) {
 	td := t.TempDir()
-	conn, err := sqlx.Connect("sqlite3", filepath.Join(td, "database.db"))
+	conn, err := sql.Open("sqlite3", filepath.Join(td, "database.db"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -22,13 +22,22 @@ func TestSetup(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	result := struct{ Name string }{}
-	err = conn.Get(&result, "SELECT name FROM sqlite_master WHERE type='table' AND name='schema_migrations';")
+	var name string
+	rows, err := conn.Query("SELECT name FROM sqlite_master WHERE type='table' AND name='schema_migrations';")
 	if err != nil {
 		t.Fatal("schema_migrations table not found")
 	}
 
-	if result.Name != "schema_migrations" {
+	if !rows.Next() {
+		t.Fatal("schema_migrations table not found")
+	}
+
+	err = rows.Scan(&name)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if name != "schema_migrations" {
 		t.Fatal("schema_migrations table not found")
 	}
 }
@@ -36,7 +45,7 @@ func TestSetup(t *testing.T) {
 func TestRun(t *testing.T) {
 	t.Run("migration not found", func(t *testing.T) {
 		td := t.TempDir()
-		conn, err := sqlx.Connect("sqlite3", filepath.Join(td, "database.db"))
+		conn, err := sql.Open("sqlite3", filepath.Join(td, "database.db"))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -52,8 +61,9 @@ func TestRun(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		result := struct{ Name string }{}
-		err = conn.Get(&result, "SELECT name FROM sqlite_master WHERE type='table' AND name='users';")
+		var name string
+		row := conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name='users';")
+		err = row.Scan(&name)
 		if err != nil {
 			t.Fatal("users table not found")
 		}
@@ -61,7 +71,7 @@ func TestRun(t *testing.T) {
 
 	t.Run("migration found", func(t *testing.T) {
 		td := t.TempDir()
-		conn, err := sqlx.Connect("sqlite3", filepath.Join(td, "database.db"))
+		conn, err := sql.Open("sqlite3", filepath.Join(td, "database.db"))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -82,8 +92,9 @@ func TestRun(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		result := struct{ Name string }{}
-		err = conn.Get(&result, "SELECT name FROM sqlite_master WHERE type='table' AND name='users';")
+		var name string
+		row := conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name='users';")
+		err = row.Scan(&name)
 		if err != nil {
 			t.Fatal("users table not found")
 		}
