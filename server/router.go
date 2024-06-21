@@ -14,6 +14,9 @@ type Router interface {
 	// Use allows to specify a middleware that should be executed for all the handlers
 	Use(middleware ...Middleware)
 
+	// ClearMiddleware removes the middleware list from the router.
+	ClearMiddleware()
+
 	// Handle allows to register a new handler for a specific pattern
 	Handle(pattern string, handler http.Handler)
 
@@ -30,9 +33,10 @@ type Router interface {
 // router is a group of routes with a common prefix and middleware
 // that should be executed for all the handlers in the group
 type router struct {
-	prefix     string
-	mux        *http.ServeMux
-	middleware []Middleware
+	prefix         string
+	mux            *http.ServeMux
+	baseMiddleware []Middleware
+	middleware     []Middleware
 }
 
 // Use allows to specify a middleware that should be executed for all the handlers
@@ -43,10 +47,19 @@ func (rg *router) Use(middleware ...Middleware) {
 	rg.middleware = append(middleware, rg.middleware...)
 }
 
+// ClearMiddleware removes the middleware list from the router.
+func (rg *router) ClearMiddleware() {
+	rg.middleware = []Middleware{}
+}
+
 // Handle allows to register a new handler for a specific pattern
 // in the group with the middleware that should be executed for the handler
 // specified in the group.
 func (rg *router) Handle(pattern string, handler http.Handler) {
+	for _, v := range rg.baseMiddleware {
+		handler = v(handler)
+	}
+
 	for _, v := range rg.middleware {
 		handler = v(handler)
 	}

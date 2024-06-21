@@ -75,3 +75,57 @@ func TestRouter(t *testing.T) {
 	}
 
 }
+
+func TestMiddleware(t *testing.T) {
+	s := server.New()
+	s.Use(server.InCtxMiddleware("customValue", "Hello, World!"))
+
+	s.Group("/", func(r server.Router) {
+		r.HandleFunc("GET /mw/{$}", func(w http.ResponseWriter, r *http.Request) {
+			v := r.Context().Value("customValue").(string)
+			w.Write([]byte(v))
+		})
+
+		r.Group("/without", func(r server.Router) {
+			r.ClearMiddleware()
+
+			r.HandleFunc("GET /mw/{$}", func(w http.ResponseWriter, r *http.Request) {
+				v, ok := r.Context().Value("customValue").(string)
+				if !ok {
+					w.Write([]byte("customValue not found"))
+					return
+				}
+				w.Write([]byte(v))
+			})
+		})
+
+		r.Group("/other-with", func(r server.Router) {
+			r.HandleFunc("GET /mw/{$}", func(w http.ResponseWriter, r *http.Request) {
+				v := r.Context().Value("customValue").(string)
+				w.Write([]byte(v + " (again)"))
+			})
+		})
+	})
+
+	testCases := []struct {
+		description string
+		pattern     string
+		expected    string
+	}{
+		{"request to handler with middleware", "/mw/", "Hello, World!"},
+		{"request to handler without middleware", "/without/mw/", "customValue not found"},
+		{"request to handler with middleware", "/other-with/mw/", "Hello, World! (again)"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			req, _ := http.NewRequest(http.MethodGet, tc.pattern, nil)
+			res := httptest.NewRecorder()
+			s.Handler().ServeHTTP(res, req)
+
+			if res.Body.String() != tc.expected {
+				t.Errorf("Expected body %s, got %s", tc.expected, res.Body.String())
+			}
+		})
+	}
+}

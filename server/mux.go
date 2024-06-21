@@ -18,19 +18,20 @@ type mux struct {
 func New(options ...Option) *mux {
 	ss := &mux{
 		router: &router{
-			prefix:     "",
-			mux:        http.NewServeMux(),
+			prefix: "",
+			mux:    http.NewServeMux(),
+			baseMiddleware: []Middleware{
+				logger,
+				recoverer,
+				requestID,
+				setValuer,
+			},
 			middleware: []Middleware{},
 		},
 
 		host: "0.0.0.0",
 		port: "3000",
 	}
-
-	ss.Use(logger)
-	ss.Use(recoverer)
-	ss.Use(requestID)
-	ss.Use(setValuer)
 
 	for _, option := range options {
 		option(ss)
