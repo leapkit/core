@@ -18,10 +18,9 @@ type mux struct {
 func New(options ...Option) *mux {
 	ss := &mux{
 		router: &router{
-			prefix:         "",
-			mux:            http.NewServeMux(),
-			baseMiddleware: baseMiddleware,
-			middleware:     []Middleware{},
+			prefix:     "",
+			mux:        http.NewServeMux(),
+			middleware: []Middleware{},
 		},
 
 		host: "0.0.0.0",

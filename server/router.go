@@ -33,10 +33,9 @@ type Router interface {
 // router is a group of routes with a common prefix and middleware
 // that should be executed for all the handlers in the group
 type router struct {
-	prefix         string
-	mux            *http.ServeMux
-	baseMiddleware []Middleware
-	middleware     []Middleware
+	prefix     string
+	mux        *http.ServeMux
+	middleware []Middleware
 }
 
 // Use allows to specify a middleware that should be executed for all the handlers
@@ -56,7 +55,7 @@ func (rg *router) ClearMiddleware() {
 // in the group with the middleware that should be executed for the handler
 // specified in the group.
 func (rg *router) Handle(pattern string, handler http.Handler) {
-	for _, v := range rg.baseMiddleware {
+	for _, v := range baseMiddleware {
 		handler = v(handler)
 	}
 
@@ -95,10 +94,9 @@ func (rg *router) Folder(prefix string, fs fs.FS) {
 // and middleware that should be executed for all the handlers in the group
 func (rg *router) Group(prefix string, rfn func(rg Router)) {
 	group := &router{
-		prefix:         path.Join(rg.prefix, prefix),
-		mux:            rg.mux,
-		baseMiddleware: rg.baseMiddleware,
-		middleware:     rg.middleware,
+		prefix:     path.Join(rg.prefix, prefix),
+		mux:        rg.mux,
+		middleware: rg.middleware,
 	}
 
 	rfn(group)
