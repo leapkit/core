@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 	"html/template"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -55,10 +56,51 @@ func GenerateMigration(name string, options ...migrations.Option) error {
 	return nil
 }
 
+// RunMigrationsDir receives a folder and a database URL
+// to apply the migrations to the database.
+func RunMigrationsDir(dir, url string) error {
+	conn, err := sqlx.Open("sqlite3", url)
+	if err != nil {
+		return fmt.Errorf("error opening database connection: %w", err)
+	}
+
+	migrator := migratorFor(conn).(migrations.Migrator)
+	err = migrator.Setup()
+	if err != nil {
+		return fmt.Errorf("error setting up migrations: %w", err)
+	}
+
+	exp := regexp.MustCompile("(\\d{14})_(.*).sql")
+	return os.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if info.IsDir() {
+			return nil
+		}
+
+		matches := exp.FindStringSubmatch(path)
+		if len(matches) != 3 {
+			return nil
+		}
+
+		timestamp := matches[1]
+		content, err := os.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("error opening migration file: %w", err)
+		}
+
+		err = migrator.Run(timestamp, string(content))
+		if err != nil {
+			return fmt.Errorf("error running migration: %w", err)
+		}
+
+		return nil
+	})
+
+}
+
 // RunMigrations by checking in the migrations database
 // table, each of the adapters take care of this.
-func RunMigrations(fs embed.FS, conn *sqlx.DB) error {
-	dir, err := fs.ReadDir(".")
+func RunMigrations(folder embed.FS, conn *sqlx.DB) error {
+	dir, err := folder.ReadDir(".")
 	if err != nil {
 		return fmt.Errorf("error reading migrations directory: %w", err)
 	}
