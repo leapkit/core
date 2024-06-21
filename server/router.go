@@ -14,6 +14,9 @@ type Router interface {
 	// Use allows to specify a middleware that should be executed for all the handlers
 	Use(middleware ...Middleware)
 
+	// ResetMiddleware clears the list of middleware on the router by setting the baseMiddleware.
+	ResetMiddleware()
+
 	// Handle allows to register a new handler for a specific pattern
 	Handle(pattern string, handler http.Handler)
 
@@ -41,6 +44,11 @@ func (rg *router) Use(middleware ...Middleware) {
 	// Add the middleware to the beginning of the middleware chain
 	// so that it is executed first
 	rg.middleware = append(middleware, rg.middleware...)
+}
+
+// ResetMiddleware clears the list of middleware on the router by setting the baseMiddleware.
+func (rg *router) ResetMiddleware() {
+	rg.middleware = baseMiddleware
 }
 
 // Handle allows to register a new handler for a specific pattern

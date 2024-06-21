@@ -11,6 +11,8 @@ import (
 	_ "github.com/leapkit/core/tools/envload"
 	// sqlite3 driver
 	_ "github.com/mattn/go-sqlite3"
+	// postgres driver
+	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -33,7 +35,12 @@ func main() {
 
 	switch os.Args[1] {
 	case "migrate":
-		err := db.RunMigrationsDir(filepath.Join("internal", "migrations"), url)
+		conn, err := db.Connect(url)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		err = db.RunMigrationsDir(filepath.Join("internal", "migrations"), conn)
 		if err != nil {
 			fmt.Println(err)
 

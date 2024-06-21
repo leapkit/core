@@ -1,9 +1,8 @@
 package postgres
 
 import (
+	"database/sql"
 	"fmt"
-
-	"github.com/jmoiron/sqlx"
 )
 
 type manager struct {
@@ -23,13 +22,15 @@ func (m *manager) Create() error {
 		return fmt.Errorf("invalid database url: %s", m.url)
 	}
 
-	db, err := sqlx.Connect("postgres", fmt.Sprintf("postgres://%s:%s@%s:%s/postgres?sslmode=disable", matches[1], matches[2], matches[3], matches[4]))
+	db, err := sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@%s:%s/postgres?sslmode=disable", matches[1], matches[2], matches[3], matches[4]))
 	if err != nil {
 		return fmt.Errorf("error connecting to database: %w", err)
 	}
 
 	var exists int
-	err = db.Get(&exists, "SELECT COUNT(datname) FROM pg_database WHERE datname ilike $1", matches[5])
+	row := db.QueryRow("SELECT COUNT(datname) FROM pg_database WHERE datname ilike $1", matches[5])
+	err = row.Scan(&exists)
+
 	if err != nil {
 		return err
 	}
@@ -53,13 +54,14 @@ func (m *manager) Drop() error {
 		return fmt.Errorf("invalid database url: %s", m.url)
 	}
 
-	db, err := sqlx.Connect("postgres", fmt.Sprintf("postgres://%s:%s@%s:%s/postgres?sslmode=disable", matches[1], matches[2], matches[3], matches[4]))
+	db, err := sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@%s:%s/postgres?sslmode=disable", matches[1], matches[2], matches[3], matches[4]))
 	if err != nil {
 		return fmt.Errorf("error connecting to database: %w", err)
 	}
 
 	var dbexists int
-	err = db.Get(&dbexists, "SELECT COUNT(datname) FROM pg_database WHERE datname ilike $1", matches[5])
+	row := db.QueryRow("SELECT COUNT(datname) FROM pg_database WHERE datname ilike $1", matches[5])
+	err = row.Scan(&dbexists)
 	if err != nil {
 		return err
 	}
