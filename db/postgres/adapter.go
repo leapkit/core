@@ -1,9 +1,8 @@
 package postgres
 
 import (
+	"database/sql"
 	"regexp"
-
-	"github.com/jmoiron/sqlx"
 )
 
 var (
@@ -15,11 +14,11 @@ var (
 // adapter for the sqlite database it includes the connection
 // to perform the framework operations.
 type adapter struct {
-	conn *sqlx.DB
+	conn *sql.DB
 }
 
 // New sqlite adapter with the passed connection.
-func New(conn *sqlx.DB) *adapter {
+func New(conn *sql.DB) *adapter {
 	return &adapter{
 		conn: conn,
 	}

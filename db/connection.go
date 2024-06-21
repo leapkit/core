@@ -1,13 +1,12 @@
 package db
 
 import (
+	"database/sql"
 	"sync"
-
-	"github.com/jmoiron/sqlx"
 )
 
 var (
-	conn *sqlx.DB
+	conn *sql.DB
 	cmux sync.Mutex
 
 	//DriverName defaults to postgres
@@ -17,7 +16,7 @@ var (
 // ConnFn is the database connection builder function that
 // will be used by the application based on the driver and
 // connection string.
-type ConnFn func() (*sqlx.DB, error)
+type ConnFn func() (*sql.DB, error)
 
 // connectionOptions for the database
 type connectionOption func()
@@ -27,7 +26,7 @@ type connectionOption func()
 // connection string. It opens the connection only once
 // and return the same connection on subsequent calls.
 func ConnectionFn(url string, opts ...connectionOption) ConnFn {
-	return func() (cx *sqlx.DB, err error) {
+	return func() (cx *sql.DB, err error) {
 		cmux.Lock()
 		defer cmux.Unlock()
 
@@ -40,7 +39,7 @@ func ConnectionFn(url string, opts ...connectionOption) ConnFn {
 			v()
 		}
 
-		conn, err = sqlx.Connect(driverName, url)
+		conn, err = sql.Open(driverName, url)
 		if err != nil {
 			return nil, err
 		}

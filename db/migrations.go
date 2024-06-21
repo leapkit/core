@@ -1,6 +1,7 @@
 package db
 
 import (
+	"database/sql"
 	"embed"
 	"fmt"
 	"html/template"
@@ -8,7 +9,6 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/leapkit/core/db/migrations"
 	"github.com/leapkit/core/db/postgres"
 	"github.com/leapkit/core/db/sqlite"
@@ -16,9 +16,14 @@ import (
 
 // migratorFor the adapter for the passed SQL connection
 // based on the driver name.
-func migratorFor(conn *sqlx.DB) any {
+func migratorFor(conn *sql.DB) any {
 	// Migrator for the passed SQL connection.
-	switch conn.DriverName() {
+	drivers := sql.Drivers()
+	if len(drivers) != 1 {
+		return nil
+	}
+
+	switch drivers[0] {
 	case "postgres":
 		return postgres.New(conn)
 	case "sqlite", "sqlite3":
@@ -57,7 +62,7 @@ func GenerateMigration(name string, options ...migrations.Option) error {
 
 // RunMigrations by checking in the migrations database
 // table, each of the adapters take care of this.
-func RunMigrations(fs embed.FS, conn *sqlx.DB) error {
+func RunMigrations(fs embed.FS, conn *sql.DB) error {
 	dir, err := fs.ReadDir(".")
 	if err != nil {
 		return fmt.Errorf("error reading migrations directory: %w", err)
