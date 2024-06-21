@@ -87,7 +87,7 @@ func TestMiddleware(t *testing.T) {
 		})
 
 		r.Group("/without", func(r server.Router) {
-			r.ClearMiddleware()
+			r.ResetMiddleware()
 
 			r.HandleFunc("GET /mw/{$}", func(w http.ResponseWriter, r *http.Request) {
 				v, ok := r.Context().Value("customValue").(string)
@@ -114,7 +114,7 @@ func TestMiddleware(t *testing.T) {
 	}{
 		{"request to handler with middleware", "/mw/", "Hello, World!"},
 		{"request to handler without middleware", "/without/mw/", "customValue not found"},
-		{"request to handler with middleware", "/other-with/mw/", "Hello, World! (again)"},
+		{"request to other handler with middleware", "/other-with/mw/", "Hello, World! (again)"},
 	}
 
 	for _, tc := range testCases {

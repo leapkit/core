@@ -7,11 +7,13 @@ import (
 	"time"
 )
 
+// baseMiddleware is a list that holds the middleware list that will be executed
+// at the beginning of a client request.
 var baseMiddleware = []Middleware{
-	logger,
-	recoverer,
-	requestID,
 	setValuer,
+	requestID,
+	recoverer,
+	logger,
 }
 
 // Middleware is a function that receives a http.Handler and returns a http.Handler

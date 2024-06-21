@@ -20,7 +20,7 @@ func New(options ...Option) *mux {
 		router: &router{
 			prefix:     "",
 			mux:        http.NewServeMux(),
-			middleware: []Middleware{},
+			middleware: baseMiddleware,
 		},
 
 		host: "0.0.0.0",
