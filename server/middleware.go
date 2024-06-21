@@ -7,6 +7,13 @@ import (
 	"time"
 )
 
+var baseMiddleware = []Middleware{
+	logger,
+	recoverer,
+	requestID,
+	setValuer,
+}
+
 // Middleware is a function that receives a http.Handler and returns a http.Handler
 // that can be used to wrap the original handler with some functionality.
 type Middleware func(http.Handler) http.Handler
