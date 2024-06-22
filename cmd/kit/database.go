@@ -9,33 +9,27 @@ import (
 
 	"github.com/leapkit/core/db"
 
-	// Load environment variables
+	// Loading .env file
 	_ "github.com/leapkit/core/tools/envload"
-	// sqlite3 driver
-	_ "github.com/mattn/go-sqlite3"
-	// postgres driver
+
+	// Postgres driver
 	_ "github.com/lib/pq"
+
+	// Sqlite3 driver
+	_ "github.com/mattn/go-sqlite3"
 )
 
-func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("Usage: tools database <command>")
-		fmt.Println("Available commands:")
-		fmt.Println(" - migrate")
-		fmt.Println(" - create")
-		fmt.Println(" - drop")
-
-		return
-	}
-
+// database provides operations to manage the database
+// during development. It can create, drop and run migrations.
+func database(args []string) error {
 	url := os.Getenv("DATABASE_URL")
 	if url == "" {
-		fmt.Println("[error] DATABASE_URL is not set")
+		fmt.Println(" DATABASE_URL is not set")
 
-		return
+		return nil
 	}
 
-	switch os.Args[1] {
+	switch args[1] {
 	case "migrate":
 		driver := "sqlite3"
 		if strings.HasPrefix(url, "postgres") {
@@ -44,25 +38,19 @@ func main() {
 
 		conn, err := sql.Open(driver, url)
 		if err != nil {
-			fmt.Println(err)
-
-			return
+			return err
 		}
 
 		err = db.RunMigrationsDir(filepath.Join("internal", "migrations"), conn)
 		if err != nil {
-			fmt.Println(err)
-
-			return
+			return err
 		}
 
 		fmt.Println("✅ Migrations ran successfully")
 	case "create":
 		err := db.Create(url)
 		if err != nil {
-			fmt.Println(err)
-
-			return
+			return err
 		}
 
 		fmt.Println("✅ Database created successfully")
@@ -70,15 +58,13 @@ func main() {
 	case "drop":
 		err := db.Drop(url)
 		if err != nil {
-			fmt.Println(err)
-
-			return
+			return err
 		}
 
 		fmt.Println("✅ Database dropped successfully")
 	default:
 		fmt.Println("command not found")
 
-		return
+		return nil
 	}
 }
