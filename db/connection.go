@@ -2,7 +2,6 @@ package db
 
 import (
 	"database/sql"
-	"strings"
 	"sync"
 )
 
@@ -55,15 +54,4 @@ func WithDriver(name string) connectionOption {
 	return func() {
 		driverName = name
 	}
-}
-
-// connect to the database based on the driver and connection string.
-func Connect(url string) (*sql.DB, error) {
-	// Based on DSN
-	driver := "sqlite3"
-	if strings.HasPrefix(url, "postgres") {
-		driver = "postgres"
-	}
-
-	return sql.Open(driver, url)
 }

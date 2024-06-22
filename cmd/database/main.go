@@ -1,9 +1,11 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/leapkit/core/db"
 
@@ -35,9 +37,16 @@ func main() {
 
 	switch os.Args[1] {
 	case "migrate":
-		conn, err := db.Connect(url)
+		driver := "sqlite3"
+		if strings.HasPrefix(url, "postgres") {
+			driver = "postgres"
+		}
+
+		conn, err := sql.Open(driver, url)
 		if err != nil {
 			fmt.Println(err)
+
+			return
 		}
 
 		err = db.RunMigrationsDir(filepath.Join("internal", "migrations"), conn)
@@ -67,7 +76,6 @@ func main() {
 		}
 
 		fmt.Println("✅ Database dropped successfully")
-
 	default:
 		fmt.Println("command not found")
 
