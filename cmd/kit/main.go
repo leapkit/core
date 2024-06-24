@@ -9,8 +9,8 @@ func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("Usage: kit <command>")
 		fmt.Println("Available commands:")
-		fmt.Println(" - database")
-		fmt.Println(" - generate")
+		fmt.Println(" - database [command]")
+		fmt.Println(" - generate [generator]")
 
 		return
 	}

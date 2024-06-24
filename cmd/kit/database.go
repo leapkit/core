@@ -67,4 +67,6 @@ func database(args []string) error {
 
 		return nil
 	}
+
+	return nil
 }
