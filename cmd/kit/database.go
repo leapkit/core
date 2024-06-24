@@ -22,6 +22,12 @@ import (
 // database provides operations to manage the database
 // during development. It can create, drop and run migrations.
 func database(args []string) error {
+	if len(args) < 2 {
+		fmt.Println("Usage: database <command>")
+
+		return nil
+	}
+
 	url := os.Getenv("DATABASE_URL")
 	if url == "" {
 		fmt.Println(" DATABASE_URL is not set")
