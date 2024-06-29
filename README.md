@@ -1,4 +1,4 @@
-⚠️ Important: Leapkit is under active development and will change at any rate. Semantic versioning does not mean much at the moment.
+⚠️ Important: Leapkit Has moved to use the leapkit/leapkit monorepo. That's where this framework will advance.
 
 # Leapkit Core
 
