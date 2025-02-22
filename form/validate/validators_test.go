@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/leapkit/core/form/validate"
+	"go.leapkit.dev/core/form/validate"
 )
 
 func TestRuleRequired(test *testing.T) {
@@ -578,40 +578,6 @@ func TestRuleWithinOptions(test *testing.T) {
 	})
 }
 
-func TestRuleValidUUID(test *testing.T) {
-	// Given a form field uuid values, Then the ValidUUID rule should return no error.
-	test.Run("correct form field values are uuids", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"6ad99ef2-fe43-4c42-b288-aef9040b5388"},
-		}
-
-		validations := validate.Fields(
-			validate.Field("input_field", validate.ValidUUID()),
-		)
-
-		verrs := validations.Validate(form)
-		if len(verrs) > 0 {
-			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
-		}
-	})
-
-	// Given a form field with invalid values, Then the ValidUUID rule should return error.
-	test.Run("incorrect form field values are not uuids", func(t *testing.T) {
-		form := url.Values{
-			"input_field": []string{"no-uuid"},
-		}
-
-		validations := validate.Fields(
-			validate.Field("input_field", validate.ValidUUID()),
-		)
-
-		verrs := validations.Validate(form)
-		if len(verrs) == 0 {
-			t.Fatalf("verrs should have errors. verrs=%v", verrs)
-		}
-	})
-}
-
 func TestRuleTimeEqualTo(test *testing.T) {
 	// Given a form field values that are times equal to the compared time, Then the TimeEqualTo rule should return no error.
 	test.Run("correct form field values are times equal to the compared time", func(t *testing.T) {
@@ -794,9 +760,9 @@ func TestRuleTimeBeforeOrEqualTo(test *testing.T) {
 	})
 }
 
-func TestRuleTimeAfter(test *testing.T) {
+func TestRuleTimeAfter(t *testing.T) {
 	// Given a form field values that are times after to the compared time, Then the TimeAfter rule should return no error.
-	test.Run("correct form field values are times after to the compared time", func(t *testing.T) {
+	t.Run("correct form field values are times after to the compared time", func(t *testing.T) {
 		form := url.Values{
 			"input_field": []string{"2026-06-26"},
 		}
@@ -812,7 +778,7 @@ func TestRuleTimeAfter(test *testing.T) {
 	})
 
 	// Given a form field values that are times equal to the compared time, Then the TimeAfter rule should return error.
-	test.Run("incorrect form field values are times equal to the compared time", func(t *testing.T) {
+	t.Run("incorrect form field values are times equal to the compared time", func(t *testing.T) {
 		form := url.Values{
 			"input_field": []string{"2026-06-26"},
 		}
@@ -828,7 +794,7 @@ func TestRuleTimeAfter(test *testing.T) {
 	})
 
 	// Given a form field values that are times before to the compared time, Then the TimeAfter rule should return error.
-	test.Run("incorrect form field values are times before to the compared time", func(t *testing.T) {
+	t.Run("incorrect form field values are times before to the compared time", func(t *testing.T) {
 		form := url.Values{
 			"input_field": []string{"2026-06-26"},
 		}
@@ -844,7 +810,7 @@ func TestRuleTimeAfter(test *testing.T) {
 	})
 
 	// Given a form field values that are not times, Then the TimeAfter rule should return error.
-	test.Run("incorrect form field values are not times", func(t *testing.T) {
+	t.Run("incorrect form field values are not times", func(t *testing.T) {
 		form := url.Values{
 			"input_field": []string{"is not a time"},
 		}
@@ -922,6 +888,93 @@ func TestRuleTimeAfterOrEqualTo(test *testing.T) {
 		verrs := validations.Validate(form)
 		if len(verrs) == 0 {
 			t.Fatalf("verrs should have errors. verrs=%v", verrs)
+		}
+	})
+}
+
+func TestEmailValidRule(t *testing.T) {
+	t.Run("correct addresses", func(t *testing.T) {
+		form := url.Values{
+			"input_field": []string{"a@pagano.id"},
+		}
+
+		validations := validate.Fields(
+			validate.Field("input_field", validate.EmailValid()),
+		)
+
+		verrs := validations.Validate(form)
+		if len(verrs) != 0 {
+			t.Fatalf("verrs should not have errors. verrs=%v", verrs)
+		}
+	})
+
+	t.Run("incorrect addresses", func(t *testing.T) {
+		tcases := map[string]string{
+			"missing tld":                       "a@pagano",
+			"missing domain":                    "a@.id",
+			"missing username":                  "@pagano.id",
+			"missing username and domain":       "@.id",
+			"missing username and tld":          "@pagano.",
+			"missing domain and tld":            "a@.",
+			"missing username, domain, and tld": "@",
+		}
+
+		for name, email := range tcases {
+			t.Run(name, func(t *testing.T) {
+				form := url.Values{
+					"input_field": []string{email},
+				}
+
+				validations := validate.Fields(
+					validate.Field("input_field", validate.EmailValid()),
+				)
+
+				verrs := validations.Validate(form)
+				if len(verrs) == 0 {
+					t.Fatalf("verrs should have errors. verrs=%v", verrs)
+				}
+			})
+		}
+	})
+}
+
+func TestRuleURLValid(t *testing.T) {
+	t.Run("correct URLs", func(t *testing.T) {
+		form := url.Values{
+			"input_field": []string{"https://wawand.co"},
+		}
+
+		validations := validate.Fields(
+			validate.Field("input_field", validate.URLValid()),
+		)
+
+		verrs := validations.Validate(form)
+		if len(verrs) > 0 {
+			t.Fatalf("verrs must not have errors, verrs=%v", verrs)
+		}
+	})
+
+	t.Run("incorrect URLs", func(t *testing.T) {
+		tcases := map[string]string{
+			"missing scheme": "wawand.co",
+			"missing domain": "hssssss",
+		}
+
+		for name, u := range tcases {
+			t.Run(name, func(t *testing.T) {
+				form := url.Values{
+					"input_field": []string{u},
+				}
+
+				validations := validate.Fields(
+					validate.Field("input_field", validate.URLValid()),
+				)
+
+				verrs := validations.Validate(form)
+				if len(verrs) == 0 {
+					t.Fatalf("verrs should have errors. verrs=%v", verrs)
+				}
+			})
 		}
 	})
 }

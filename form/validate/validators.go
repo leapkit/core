@@ -4,13 +4,12 @@ import (
 	"cmp"
 	"errors"
 	"fmt"
+	"net/url"
 	"regexp"
 	"slices"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/gofrs/uuid/v5"
 )
 
 // Required function validates the form field has no-empty values.
@@ -204,21 +203,6 @@ func WithinOptions(options []string, message ...string) ValidatorFn {
 	}
 }
 
-// ValidUUID function validates that the values are valid UUIDs.
-func ValidUUID(message ...string) ValidatorFn {
-	return func(values []string) error {
-		for _, val := range values {
-			if !uuid.FromStringOrNil(val).IsNil() {
-				continue
-			}
-
-			return newError(fmt.Sprintf("'%s' is not a valid uuid.", val), message...)
-		}
-
-		return nil
-	}
-}
-
 // TimeEqualTo function validates that the values are equal an specific time.
 func TimeEqualTo(u time.Time, message ...string) ValidatorFn {
 	return func(values []string) error {
@@ -313,6 +297,33 @@ func TimeAfterOrEqualTo(u time.Time, message ...string) ValidatorFn {
 			}
 
 			return newError(fmt.Sprintf("Time should be after or equal to '%s'.", u.Format(time.DateOnly)), message...)
+		}
+
+		return nil
+	}
+}
+
+// EmailValid function validates that the values are valid emails (syntax only)
+func EmailValid(message ...string) ValidatorFn {
+	return func(values []string) error {
+		emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+
+		for _, val := range values {
+			if !emailRegex.MatchString(val) {
+				return newError(fmt.Sprintf("'%s' is not a valid email.", val), message...)
+			}
+		}
+
+		return nil
+	}
+}
+
+func URLValid(message ...string) ValidatorFn {
+	return func(values []string) error {
+		for _, val := range values {
+			if _, err := url.ParseRequestURI(val); err != nil {
+				return newError(fmt.Sprintf("'%s' is not a valid URL.", val), message...)
+			}
 		}
 
 		return nil

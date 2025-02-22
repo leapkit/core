@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/leapkit/core/form/validate"
+	"go.leapkit.dev/core/form/validate"
 )
 
 // validator is an interface that wraps the Validate method

@@ -3,41 +3,33 @@ package assets
 import (
 	"io"
 	"io/fs"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
 func (m *manager) HandlerPattern() string {
+	if m.servingPath == "/" {
+		return ""
+	}
+
 	return m.servingPath
 }
 
-func (m *manager) HandlerFn(w http.ResponseWriter, r *http.Request) {
-	http.ServeFileFS(w, r, m, strings.TrimPrefix(r.URL.Path, m.handlerPrefix()))
-}
-
-func (m *manager) Open(name string) (file fs.File, err error) {
+func (m *manager) Open(name string) (fs.File, error) {
 	ext := filepath.Ext(name)
 	if ext == ".go" {
 		return nil, os.ErrNotExist
 	}
 
 	// Converting hashed into original file name
-	smp := m.HashToFile[name]
-	if smp != "" {
-		name = smp
+	if original, ok := m.HashToFile[name]; ok {
+		name = original
 	}
 
-	fn := m.embedded.Open
-	if env := os.Getenv("GO_ENV"); env == "development" {
-		fn = m.folder.Open
-	}
+	name = strings.TrimPrefix(name, m.servingPath)
 
-	name = strings.TrimPrefix(name, m.handlerPrefix())
-
-	file, err = fn(name)
-	return file, err
+	return m.embedded.Open(name)
 }
 
 func (m *manager) ReadFile(name string) ([]byte, error) {
@@ -45,10 +37,7 @@ func (m *manager) ReadFile(name string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer x.Close()
 
 	return io.ReadAll(x)
-}
-
-func (m *manager) handlerPrefix() string {
-	return strings.TrimSuffix(m.servingPath, "*")
 }

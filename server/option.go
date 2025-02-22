@@ -1,5 +1,13 @@
 package server
 
+import (
+	"io/fs"
+	"net/http"
+
+	"go.leapkit.dev/core/assets"
+	"go.leapkit.dev/core/server/session"
+)
+
 // Options for the server
 type Option func(*mux)
 
@@ -16,5 +24,42 @@ func WithHost(host string) Option {
 func WithPort(port string) Option {
 	return func(s *mux) {
 		s.port = port
+	}
+}
+
+// WithSession allows to set the session within the application.
+func WithSession(secret, name string, options ...session.Option) Option {
+	sw := session.New(secret, name, options...)
+	return func(m *mux) {
+		m.Use(func(h http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w, r = sw.Register(w, r)
+
+				h.ServeHTTP(w, r)
+			})
+		})
+	}
+}
+
+func WithAssets(embedded fs.FS, servingPath string) Option {
+	manager := assets.NewManager(embedded, servingPath)
+	return func(m *mux) {
+		m.Use(func(h http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if vlr, ok := r.Context().Value("valuer").(interface{ Set(string, any) }); ok {
+					vlr.Set("assetPath", manager.PathFor)
+				}
+
+				h.ServeHTTP(w, r)
+			})
+		})
+
+		m.Folder(manager.HandlerPattern(), manager)
+	}
+}
+
+func WithErrorMessage(status int, message string) Option {
+	return func(m *mux) {
+		errorMessageMap[status] = message
 	}
 }

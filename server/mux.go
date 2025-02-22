@@ -1,8 +1,18 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 )
+
+// defaultCatchAllHandler to log and return a 404 for all routes except the root route.
+var defaultCatchAllHandler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "/" {
+		return
+	}
+
+	Error(w, fmt.Errorf("404 page not found"), http.StatusNotFound)
+})
 
 // Rood routeGroup is a group of routes with a common prefix and middleware
 // it also has a host and port as well as a Start method as it is the root of the server
@@ -39,7 +49,13 @@ func (s *mux) Router() Router {
 }
 
 func (s *mux) Handler() http.Handler {
-	return s.mux
+	// if no catch-all or root route has been set
+	// we use the default one
+	if !s.rootSet {
+		s.Handle("/", defaultCatchAllHandler)
+	}
+
+	return s
 }
 
 func (s *mux) Addr() string {

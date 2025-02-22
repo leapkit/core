@@ -1,10 +1,16 @@
 package server
 
 import (
+	"cmp"
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
+	"runtime/debug"
 	"time"
+
+	"go.leapkit.dev/core/server/internal/response"
 )
 
 // baseMiddleware is a list that holds the middleware list that will be executed
@@ -12,8 +18,8 @@ import (
 var baseMiddleware = []Middleware{
 	setValuer,
 	requestID,
-	recoverer,
 	logger,
+	recoverer,
 }
 
 // Middleware is a function that receives a http.Handler and returns a http.Handler
@@ -31,23 +37,48 @@ func requestID(next http.Handler) http.Handler {
 // and the time it took to process the request.
 func logger(next http.Handler) http.Handler {
 	logger := slog.Default()
+	if os.Getenv("GO_ENV") == "production" {
+		// Using json logger in production
+		logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		next.ServeHTTP(w, r)
 
-		logger.Info("", "method", r.Method, "url", r.URL.Path, "took", time.Since(start))
+		lw, ok := w.(*response.Writer)
+		if !ok {
+			lw = &response.Writer{ResponseWriter: w}
+		}
+
+		defer func() {
+			status := cmp.Or(lw.Status, http.StatusOK)
+			logLevel := slog.LevelInfo
+
+			if status >= http.StatusInternalServerError {
+				logLevel = slog.LevelError
+			}
+
+			logger.Log(r.Context(), logLevel, "", "method", r.Method, "status", status, "url", r.URL.Path, "took", time.Since(start))
+		}()
+
+		next.ServeHTTP(lw, r)
 	})
 }
 
 // recoverer is a middleware that recovers from panics and logs the error.
+// The error stack trace is printed only when the application is in 'development' mode.
 func recoverer(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
 				slog.Error("panic", "error", err, "method", r.Method, "url", r.URL.Path)
 
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				if cmp.Or(os.Getenv("GO_ENV"), "development") == "development" {
+					os.Stderr.WriteString(fmt.Sprint(err, "\n"))
+					os.Stderr.Write(debug.Stack())
+				}
+
+				Error(w, fmt.Errorf("%v", err), http.StatusInternalServerError)
 			}
 		}()
 

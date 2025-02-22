@@ -8,8 +8,8 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/leapkit/core/form"
-	"github.com/leapkit/core/form/validate"
+	"go.leapkit.dev/core/form"
+	"go.leapkit.dev/core/form/validate"
 )
 
 func TestValidate(t *testing.T) {

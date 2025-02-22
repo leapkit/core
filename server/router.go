@@ -2,11 +2,12 @@ package server
 
 import (
 	"fmt"
+	"io/fs"
 	"net/http"
 	"path"
 	"strings"
 
-	"io/fs"
+	"go.leapkit.dev/core/server/internal/response"
 )
 
 // Router is the interface that wraps the basic methods for a router
@@ -36,14 +37,13 @@ type router struct {
 	prefix     string
 	mux        *http.ServeMux
 	middleware []Middleware
+	rootSet    bool
 }
 
 // Use allows to specify a middleware that should be executed for all the handlers
 // in the group
 func (rg *router) Use(middleware ...Middleware) {
-	// Add the middleware to the beginning of the middleware chain
-	// so that it is executed first
-	rg.middleware = append(middleware, rg.middleware...)
+	rg.middleware = append(rg.middleware, middleware...)
 }
 
 // ResetMiddleware clears the list of middleware on the router by setting the baseMiddleware.
@@ -55,10 +55,6 @@ func (rg *router) ResetMiddleware() {
 // in the group with the middleware that should be executed for the handler
 // specified in the group.
 func (rg *router) Handle(pattern string, handler http.Handler) {
-	for _, v := range rg.middleware {
-		handler = v(handler)
-	}
-
 	method := ""
 	route := pattern
 
@@ -68,6 +64,16 @@ func (rg *router) Handle(pattern string, handler http.Handler) {
 	}
 
 	pattern = fmt.Sprintf("%s %s", method, path.Join(rg.prefix, route))
+	pattern = strings.Trim(pattern, " ")
+
+	// When this route is set we mark the rootSet as true
+	rg.rootSet = rg.rootSet || (pattern == "/")
+
+	// Wrapping with the middleware
+	for i := len(rg.middleware) - 1; i >= 0; i-- {
+		handler = rg.middleware[i](handler)
+	}
+
 	rg.mux.Handle(pattern, handler)
 }
 
@@ -81,8 +87,8 @@ func (rg *router) HandleFunc(pattern string, handler http.HandlerFunc) {
 // Folder allows to serve static files from a directory
 func (rg *router) Folder(prefix string, fs fs.FS) {
 	rg.mux.Handle(
-		fmt.Sprintf("GET %s/*", path.Join(rg.prefix, prefix)),
-		http.StripPrefix(prefix, http.FileServer(http.FS(fs))),
+		fmt.Sprintf("GET %s/", path.Join(rg.prefix, prefix)),
+		http.StripPrefix(prefix, http.FileServerFS(fs)),
 	)
 }
 
@@ -96,4 +102,9 @@ func (rg *router) Group(prefix string, rfn func(rg Router)) {
 	}
 
 	rfn(group)
+}
+
+func (rg *router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w = &response.Writer{ResponseWriter: w}
+	rg.mux.ServeHTTP(w, r)
 }
