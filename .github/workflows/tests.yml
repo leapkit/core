@@ -22,6 +22,6 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go
-      - name: test
+      - name: test core
         run: |
           go test --cover ./... -v
