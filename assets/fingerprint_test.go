@@ -9,7 +9,7 @@ import (
 )
 
 func TestFingerprint(t *testing.T) {
-	assetsPath := "/files/"
+	assetsPath := "/files"
 	m := assets.NewManager(fstest.MapFS{
 		"main.js":        {Data: []byte("AAA")},
 		"other/main.js":  {Data: []byte("AAA")},
@@ -125,6 +125,45 @@ func TestFingerprint(t *testing.T) {
 		}
 	})
 
+	t.Run("HandlerPattern", func(t *testing.T) {
+		cases := []struct {
+			pattern  string
+			expected string
+		}{
+			{"/", ""},
+			{"/", ""},
+
+			{"files", "/files/"},
+			{"/files/", "/files/"},
+			{"files/", "/files/"},
+			{"/files/", "/files/"},
+
+			{"files/path", "/files/path/"},
+			{"/files/path", "/files/path/"},
+			{"files/path/", "/files/path/"},
+			{"/files/path/", "/files/path/"},
+		}
+
+		for _, c := range cases {
+			m := assets.NewManager(fstest.MapFS{}, c.pattern)
+			if m.HandlerPattern() != c.expected {
+				t.Errorf("Expected %q to equal %q", m.HandlerPattern(), c.expected)
+			}
+		}
+	})
+
+	t.Run("HandlerPattern with root serving path", func(t *testing.T) {
+		m := assets.NewManager(fstest.MapFS{}, "/")
+		if m.HandlerPattern() == "/" {
+			t.Errorf("Expected empty string, got %s", m.HandlerPattern())
+		}
+
+		m = assets.NewManager(fstest.MapFS{}, "public")
+		if m.HandlerPattern() != "/public/" {
+			t.Errorf("Expected '/public/', got %s", m.HandlerPattern())
+		}
+	})
+
 	t.Run("PathFor normalize file path", func(t *testing.T) {
 		cases := []struct {
 			servingPath string
@@ -185,5 +224,53 @@ func TestFingerprint(t *testing.T) {
 				t.Errorf("%d, Expected %s to start with /public/", i, result)
 			}
 		}
+	})
+
+	t.Run("recalculate hashed files only un development", func(t *testing.T) {
+		fsMap := fstest.MapFS{
+			"main.js": {Data: []byte("AAA")},
+		}
+
+		m := assets.NewManager(fsMap, assetsPath)
+
+		t.Run("in development mode should recalculate the asset hash", func(t *testing.T) {
+			t.Setenv("GO_ENV", "development")
+
+			a, err := m.PathFor("main.js")
+			if err != nil {
+				t.Errorf("Expected nil, got %s", err)
+			}
+
+			fsMap["main.js"] = &fstest.MapFile{Data: []byte("BBB")}
+
+			b, err := m.PathFor("main.js")
+			if err != nil {
+				t.Errorf("Expected nil, got %s", err)
+			}
+
+			if a == b {
+				t.Errorf("Expected %s to not equal %s", a, b)
+			}
+		})
+
+		t.Run("in other env should not recalculate the asset hash", func(t *testing.T) {
+			t.Setenv("GO_ENV", "production")
+
+			a, err := m.PathFor("main.js")
+			if err != nil {
+				t.Errorf("Expected nil, got %s", err)
+			}
+
+			fsMap["main.js"] = &fstest.MapFile{Data: []byte("CCC")}
+
+			b, err := m.PathFor("main.js")
+			if err != nil {
+				t.Errorf("Expected nil, got %s", err)
+			}
+
+			if a != b {
+				t.Errorf("Expected %s to equal %s", a, b)
+			}
+		})
 	})
 }
