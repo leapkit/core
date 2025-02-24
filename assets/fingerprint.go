@@ -40,6 +40,7 @@ func (m *manager) PathFor(name string) (string, error) {
 	m.fmut.Lock()
 	defer m.fmut.Unlock()
 
+	// Delete previous asset hash from map
 	if old, exists := m.fileToHash[normalized]; exists && old != filename {
 		delete(m.HashToFile, old)
 	}
