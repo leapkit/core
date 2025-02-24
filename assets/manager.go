@@ -24,12 +24,11 @@ func NewManager(embedded fs.FS, servingPath string) *manager {
 		servingPath = "/"
 	}
 
-	if !strings.HasPrefix(servingPath, "/") {
-		servingPath = "/" + servingPath
-	}
-
-	if !strings.HasSuffix(servingPath, "/") {
-		servingPath += "/"
+	servingPath = strings.Trim(servingPath, "/")
+	if servingPath == "" {
+		servingPath = "/"
+	} else {
+		servingPath = "/" + servingPath + "/"
 	}
 
 	return &manager{

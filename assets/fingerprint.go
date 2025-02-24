@@ -11,15 +11,16 @@ import (
 
 // PathFor returns the fingerprinted path for a given
 // file. If the path passed contains the hash it will
-// return the same path.
+// return the same path only in GO_ENV=development
 
 // filename to open should be the file without the prefix
 // filename for the map should be the file without the prefix
 // filename returned should be the file with the prefix
 func (m *manager) PathFor(name string) (string, error) {
 	normalized := m.normalize(name)
-	if hashed, ok := m.fileToHash[normalized]; ok {
-		return path.Join(m.servingPath, hashed), nil
+
+	if hashed, ok := m.fileToHash[normalized]; ok && os.Getenv("GO_ENV") != "development" {
+		return path.Join("/", m.servingPath, hashed), nil
 	}
 
 	// Compute the hash of the file
@@ -38,6 +39,11 @@ func (m *manager) PathFor(name string) (string, error) {
 
 	m.fmut.Lock()
 	defer m.fmut.Unlock()
+
+	if old, exists := m.fileToHash[normalized]; exists && old != filename {
+		delete(m.HashToFile, old)
+	}
+
 	m.fileToHash[normalized] = filename
 	m.HashToFile[filename] = normalized
 
