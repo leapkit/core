@@ -16,6 +16,12 @@ func (m *manager) HandlerPattern() string {
 	return m.servingPath
 }
 
+// Open opens the named file. This method is part of the fs.FS interface implementation.
+// It handles special cases for assets, such as preventing access to Go source files and
+// resolving hashed filenames to their original forms.
+//
+// This function implements the fs.FS interface and allows using the manager as a filesystem
+// compatible with standard library functions that expect an fs.FS.
 func (m *manager) Open(name string) (fs.File, error) {
 	ext := filepath.Ext(name)
 	if ext == ".go" {
