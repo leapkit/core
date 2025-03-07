@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	//go:embed error.html
+	//go:embed error.tmpl
 	htmlTemplate string
 
 	// errorMessageMap holds custom error messages based on HTTP status codes.
@@ -29,6 +29,18 @@ var (
 	}
 )
 
+// errorTemplate generates a HTML error page using the error.tmpl template.
+// It takes a status code, title, and description, and returns the rendered HTML as a string.
+// If there is an error parsing the template or executing it, the error message is returned instead.
+//
+// Parameters:
+//   - status: HTTP status code to display in the error page
+//   - title: Short title describing the error
+//   - description: Longer explanation of the error
+//
+// Returns:
+//
+//	A string containing either the rendered HTML error page or an error message
 func errorTemplate(status int, title, description string) string {
 	t, err := template.New("error.html").Parse(htmlTemplate)
 	if err != nil {

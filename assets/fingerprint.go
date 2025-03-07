@@ -51,10 +51,18 @@ func (m *manager) PathFor(name string) (string, error) {
 	return path.Join("/", m.servingPath, filename), nil
 }
 
+// normalize cleans and standardizes the given file path.
+// It removes leading slashes, the serving path prefix, and ensures
+// consistent formatting of the path.
+//
+// Parameters:
+//   - name: the file path to normalize
+//
+// Returns:
+//   - a normalized path string without leading slashes
 func (m *manager) normalize(name string) string {
 	name = strings.TrimPrefix(path.Clean(name), "/")
 	servingPath := strings.TrimPrefix(path.Clean(m.servingPath), "/")
-
 	name = strings.TrimPrefix(path.Clean(name), servingPath)
 
 	return strings.TrimPrefix(name, "/")
