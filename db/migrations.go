@@ -11,7 +11,7 @@ import (
 
 // Migrations are expected to follow the naming convention:
 // YYYYMMDDHHMMSS_description.sql (e.g. 20220101120000_create_users_table.sql)
-var migrationExp = regexp.MustCompile(`(\\d{14})_(.*).sql`)
+var migrationExp = regexp.MustCompile(`(\d{14})_(.*).sql`)
 
 // RunMigrationsDir receives a folder and a database URL
 // to apply the migrations to the database.
@@ -74,7 +74,7 @@ func RunMigrations(fs embed.FS, conn *sql.DB) error {
 //   - An error if the migration fails, nil on success
 //   - Returns nil silently for files that don't match the migration naming pattern
 func process(migrator *Migrator, filename string, fileReadFn func(string) ([]byte, error)) error {
-	matches := migrationExp.FindStringSubmatch(filename)
+	matches := migrationExp.FindStringSubmatch(filepath.Base(filename))
 	if len(matches) != 3 {
 		return nil
 	}
