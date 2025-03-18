@@ -6,8 +6,8 @@ import (
 )
 
 var (
-	conn *sql.DB
-	cmux sync.Mutex
+	dbPool = map[string]*sql.DB{}
+	cmux   sync.Mutex
 
 	//DriverName defaults to postgres
 	driverName = "postgres"
@@ -30,7 +30,7 @@ func ConnectionFn(url string, opts ...connectionOption) ConnFn {
 		cmux.Lock()
 		defer cmux.Unlock()
 
-		if conn != nil && conn.Ping() == nil {
+		if conn := dbPool[url]; conn != nil && conn.Ping() == nil {
 			return conn, nil
 		}
 
@@ -39,10 +39,12 @@ func ConnectionFn(url string, opts ...connectionOption) ConnFn {
 			v()
 		}
 
-		conn, err = sql.Open(driverName, url)
+		conn, err := sql.Open(driverName, url)
 		if err != nil {
 			return nil, err
 		}
+
+		dbPool[url] = conn
 
 		return conn, nil
 	}
