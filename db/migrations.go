@@ -54,7 +54,10 @@ func RunMigrations(fs embed.FS, conn *sql.DB) error {
 			continue
 		}
 
-		return process(migrator, v.Name(), fs.ReadFile)
+		err := process(migrator, v.Name(), fs.ReadFile)
+		if err != nil {
+			return fmt.Errorf("error processing migration %s: %w", v.Name(), err)
+		}
 	}
 
 	return nil
