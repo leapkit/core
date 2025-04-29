@@ -32,7 +32,7 @@ func (v *valuer) Set(key string, value any) {
 	v.data[key] = value
 }
 
-// For each of the requests we want to have a valuer intance so
+// For each of the requests we want to have a valuer instance so
 // that we can store values in the context that can be used by
 // other components.
 func setValuer(next http.Handler) http.Handler {
