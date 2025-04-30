@@ -48,6 +48,7 @@ func WithAssets(embedded fs.FS, servingPath string) Option {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if vlr, ok := r.Context().Value("valuer").(interface{ Set(string, any) }); ok {
 					vlr.Set("assetPath", manager.PathFor)
+					vlr.Set("importMap", manager.ImportMap)
 				}
 
 				h.ServeHTTP(w, r)

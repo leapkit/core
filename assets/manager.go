@@ -14,7 +14,7 @@ type manager struct {
 
 	fmut       sync.Mutex
 	fileToHash map[string]string
-	HashToFile map[string]string
+	hashToFile map[string]string
 }
 
 // NewManager returns a new manager that wraps the given fs.FS.
@@ -35,6 +35,6 @@ func NewManager(embedded fs.FS, servingPath string) *manager {
 		embedded:    embedded,
 		servingPath: servingPath,
 		fileToHash:  map[string]string{},
-		HashToFile:  map[string]string{},
+		hashToFile:  map[string]string{},
 	}
 }
