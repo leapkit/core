@@ -75,7 +75,7 @@ func recoverer(next http.Handler) http.Handler {
 
 				if cmp.Or(os.Getenv("GO_ENV"), "development") == "development" {
 					fmt.Fprintln(os.Stderr, err)
-					fmt.Fprintln(os.Stderr, debug.Stack())
+					os.Stderr.Write(debug.Stack())
 				}
 
 				Error(w, fmt.Errorf("%v", err), http.StatusInternalServerError)
