@@ -29,7 +29,10 @@ func (m *manager) Open(name string) (fs.File, error) {
 	}
 
 	// Converting hashed into original file name
-	if original, ok := m.hashToFile[name]; ok {
+	m.fmut.Lock()
+	original, ok := m.hashToFile[name]
+	m.fmut.Unlock()
+	if ok {
 		name = original
 	}
 
