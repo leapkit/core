@@ -1,3 +1,5 @@
+// Package db provides database connection management, migration system,
+// and database creation utilities with support for SQLite and PostgreSQL.
 package db
 
 import (
@@ -29,12 +31,12 @@ func Create(url string) error {
 func createSQLite(conURL string) error {
 	u, err := url.Parse(conURL)
 	if err != nil {
-		return fmt.Errorf("error parsing database URL: %w", err)
+		return fmt.Errorf("parsing database URL: %w", err)
 	}
 
 	_, err = os.Create(u.Path)
 	if err != nil {
-		return fmt.Errorf("error creating database file %s: %w", u.Path, err)
+		return fmt.Errorf("creating database file %s: %w", u.Path, err)
 	}
 
 	return nil
@@ -43,12 +45,12 @@ func createSQLite(conURL string) error {
 func createPostgres(conURL string) error {
 	matches := postgresURLExp.FindStringSubmatch(conURL)
 	if len(matches) != 6 {
-		return fmt.Errorf("invalid database url: %s", conURL)
+		return fmt.Errorf("invalid database URL: %s", conURL)
 	}
 
 	db, err := sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@%s:%s/postgres?sslmode=disable", matches[1], matches[2], matches[3], matches[4]))
 	if err != nil {
-		return fmt.Errorf("error connecting to database: %w", err)
+		return fmt.Errorf("connecting to database: %w", err)
 	}
 
 	var exists int
@@ -65,7 +67,7 @@ func createPostgres(conURL string) error {
 
 	_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s", matches[5]))
 	if err != nil {
-		return fmt.Errorf("error creating database: %w", err)
+		return fmt.Errorf("creating database: %w", err)
 	}
 
 	return nil
@@ -84,12 +86,12 @@ func Drop(url string) error {
 func dropSQLite(conURL string) error {
 	u, err := url.Parse(conURL)
 	if err != nil {
-		return fmt.Errorf("error parsing database URL: %w", err)
+		return fmt.Errorf("parsing database URL: %w", err)
 	}
 
 	err = os.Remove(u.Path)
 	if err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("error dropping database: %w", err)
+		return fmt.Errorf("dropping database: %w", err)
 	}
 
 	return nil
@@ -98,12 +100,12 @@ func dropSQLite(conURL string) error {
 func dropPostgres(conURL string) error {
 	matches := postgresURLExp.FindStringSubmatch(conURL)
 	if len(matches) != 3 || matches[1] == "" {
-		return fmt.Errorf("invalid database url: %s", conURL)
+		return fmt.Errorf("invalid database URL: %s", conURL)
 	}
 
 	db, err := sql.Open("postgres", matches[1])
 	if err != nil {
-		return fmt.Errorf("error connecting to database: %w", err)
+		return fmt.Errorf("connecting to database: %w", err)
 	}
 
 	dbName := cmp.Or(matches[2], "postgres")
@@ -121,7 +123,7 @@ func dropPostgres(conURL string) error {
 
 	_, err = db.Exec(fmt.Sprintf("DROP DATABASE %s", dbName))
 	if err != nil {
-		return fmt.Errorf("error dropping database: %w", err)
+		return fmt.Errorf("dropping database: %w", err)
 	}
 
 	return nil

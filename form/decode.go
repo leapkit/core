@@ -1,3 +1,6 @@
+// Package form provides form data decoding and validation utilities for HTTP requests.
+// It uses the go-playground/form library for decoding form data into Go structs
+// and includes support for multipart forms and custom type decoders.
 package form
 
 import (
