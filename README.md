@@ -8,7 +8,7 @@
 ### Server Module (`server/`)
 - HTTP server with routing capabilities
 - Middleware support
-- Session management 
+- Session management
 - Error handling with templating support
 - Built on top of standard Go `net/http`
 
@@ -37,7 +37,7 @@
 This library serves as a foundational component for the Leapkit ecosystem - a Go-based web framework that aims to provide:
 
 - **Simplicity**: Clean, straightforward APIs for common web development tasks
-- **Modularity**: Each component can be used independently 
+- **Modularity**: Each component can be used independently
 - **Convention over Configuration**: Sensible defaults (like `app/layouts/application.html` for layouts)
 - **Database Agnostic**: Support for multiple database systems
 - **Modern Go Practices**: Uses Go 1.22+ and follows contemporary Go patterns
@@ -50,22 +50,9 @@ The project uses minimal, well-established dependencies:
 - **SQLite3**: For database support
 - **go-playground/form**: For form processing
 
-## 🚀 Usage
-
-This library is designed to be imported as `go.leapkit.dev/core` and used to build larger web applications or other Leapkit components. Each module can be used independently or together to create full-featured web applications.
-
-```go
-import (
-    "go.leapkit.dev/core/server"
-    "go.leapkit.dev/core/render"
-    "go.leapkit.dev/core/db"
-)
-```
-
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 
 ![Alt](https://repobeats.axiom.co/api/embed/96fe663d186f3135ee411891075e366b731aaa16.svg "Repobeats analytics image")
-
