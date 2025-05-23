@@ -74,8 +74,8 @@ func recoverer(next http.Handler) http.Handler {
 				slog.Error("panic", "error", err, "method", r.Method, "url", r.URL.Path)
 
 				if cmp.Or(os.Getenv("GO_ENV"), "development") == "development" {
-					os.Stderr.WriteString(fmt.Sprint(err, "\n"))
-					os.Stderr.Write(debug.Stack())
+					fmt.Fprintln(os.Stderr, err)
+					fmt.Fprintln(os.Stderr, debug.Stack())
 				}
 
 				Error(w, fmt.Errorf("%v", err), http.StatusInternalServerError)
