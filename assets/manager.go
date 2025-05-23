@@ -1,3 +1,6 @@
+// Package assets provides asset management functionality including fingerprinting,
+// import maps, and static file serving. It helps manage static assets like CSS,
+// JavaScript, and images with support for caching and versioning.
 package assets
 
 import (

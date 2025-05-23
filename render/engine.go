@@ -1,3 +1,7 @@
+// Package render provides a template rendering system using the Plush templating engine.
+// It supports layouts, partials, file system-based template loading, and context-aware rendering
+// with helpers and global values. The engine is designed to work with web applications
+// and provides a clean API for rendering HTML templates.
 package render
 
 import (

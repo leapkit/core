@@ -1,3 +1,7 @@
+// Package server provides HTTP server functionality with routing capabilities,
+// middleware support, and session management built on top of standard Go net/http.
+// It offers a simple API for building web applications with clean routing,
+// middleware chains, and error handling.
 package server
 
 import (
@@ -14,9 +18,9 @@ var defaultCatchAllHandler http.Handler = http.HandlerFunc(func(w http.ResponseW
 	Error(w, fmt.Errorf("404 page not found"), http.StatusNotFound)
 })
 
-// Rood routeGroup is a group of routes with a common prefix and middleware
-// it also has a host and port as well as a Start method as it is the root of the server
-// that should be executed for all the handlers in the group.
+// mux is the root server that contains a router group with a common prefix and middleware.
+// It also has a host and port configuration and serves as the main entry point
+// for handling HTTP requests.
 type mux struct {
 	*router
 
