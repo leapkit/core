@@ -1,9 +1,4 @@
 ## Leapkit Core
-
-<img width="300" alt="logo" src="https://github.com/LeapKit/template/assets/645522/d5bcb8ed-c763-4b39-8cfb-aed694b87646">
-
-![Alt](https://repobeats.axiom.co/api/embed/96fe663d186f3135ee411891075e366b731aaa16.svg "Repobeats analytics image")
-
 **Leapkit Core** is a Go web framework library that provides essential building blocks for building web applications. It's designed to be a lightweight, modular foundation with clean APIs and sensible defaults.
 
 ## 🏗️ Core Components
@@ -68,3 +63,7 @@ import (
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+<img width="300" alt="logo" src="https://github.com/LeapKit/template/assets/645522/d5bcb8ed-c763-4b39-8cfb-aed694b87646">
+![Alt](https://repobeats.axiom.co/api/embed/96fe663d186f3135ee411891075e366b731aaa16.svg "Repobeats analytics image")
+
