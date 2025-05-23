@@ -1,6 +1,8 @@
 package assets_test
 
 import (
+	"html/template"
+	"io/fs"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -309,5 +311,363 @@ func TestFingerprint(t *testing.T) {
 				t.Errorf("Expected %s to equal %s", a, b)
 			}
 		})
+	})
+}
+
+func TestReadFile(t *testing.T) {
+	t.Run("successfully reads file", func(t *testing.T) {
+		content := "console.log('hello world');"
+		m := assets.NewManager(fstest.MapFS{
+			"main.js": {Data: []byte(content)},
+		}, "/assets")
+
+		data, err := m.ReadFile("main.js")
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		if string(data) != content {
+			t.Errorf("Expected %q, got %q", content, string(data))
+		}
+	})
+
+	t.Run("file not found", func(t *testing.T) {
+		m := assets.NewManager(fstest.MapFS{
+			"main.js": {Data: []byte("content")},
+		}, "/assets")
+
+		_, err := m.ReadFile("nonexistent.js")
+		if err == nil {
+			t.Error("Expected error when reading nonexistent file")
+		}
+	})
+
+	t.Run("cannot read Go files", func(t *testing.T) {
+		m := assets.NewManager(fstest.MapFS{
+			"main.go": {Data: []byte("package main")},
+		}, "/assets")
+
+		_, err := m.ReadFile("main.go")
+		if err == nil {
+			t.Error("Expected error when reading .go file")
+		}
+	})
+
+	t.Run("reads file with serving path prefix", func(t *testing.T) {
+		content := "test content"
+		m := assets.NewManager(fstest.MapFS{
+			"test.js": {Data: []byte(content)},
+		}, "/assets")
+
+		data, err := m.ReadFile("/assets/test.js")
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		if string(data) != content {
+			t.Errorf("Expected %q, got %q", content, string(data))
+		}
+	})
+}
+
+// errorFS is a test filesystem that returns a custom error for importmap.json
+type errorFS struct{}
+
+func (e *errorFS) Open(name string) (fs.File, error) {
+	if name == "importmap.json" {
+		return nil, fs.ErrPermission // Return a non-NotExist error
+	}
+	return nil, fs.ErrNotExist
+}
+
+func TestImportMap(t *testing.T) {
+	t.Run("no importmap.json file", func(t *testing.T) {
+		m := assets.NewManager(fstest.MapFS{
+			"main.js": {Data: []byte("console.log('hello');")},
+		}, "/assets")
+
+		result, err := m.ImportMap()
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+		if result != "" {
+			t.Errorf("Expected empty string, got %q", result)
+		}
+	})
+
+	t.Run("valid importmap.json without application", func(t *testing.T) {
+		importMapJSON := `{
+			"imports": {
+				"react": "/assets/react.js",
+				"vue": "/assets/vue.js"
+			}
+		}`
+
+		m := assets.NewManager(fstest.MapFS{
+			"importmap.json": {Data: []byte(importMapJSON)},
+			"react.js":       {Data: []byte("// React code")},
+			"vue.js":         {Data: []byte("// Vue code")},
+		}, "/assets")
+
+		result, err := m.ImportMap()
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		resultStr := string(result)
+		if !strings.Contains(resultStr, `<script type="importmap">`) {
+			t.Error("Expected importmap script tag")
+		}
+		if !strings.Contains(resultStr, "react") {
+			t.Error("Expected react import")
+		}
+		if !strings.Contains(resultStr, "vue") {
+			t.Error("Expected vue import")
+		}
+		if strings.Contains(resultStr, `<script type="module">import "application";</script>`) {
+			t.Error("Should not contain application import when not present")
+		}
+	})
+
+	t.Run("valid importmap.json with application", func(t *testing.T) {
+		importMapJSON := `{
+			"imports": {
+				"application": "/assets/application.js",
+				"react": "/assets/react.js"
+			}
+		}`
+
+		m := assets.NewManager(fstest.MapFS{
+			"importmap.json": {Data: []byte(importMapJSON)},
+			"application.js": {Data: []byte("// Application code")},
+			"react.js":       {Data: []byte("// React code")},
+		}, "/assets")
+
+		result, err := m.ImportMap()
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		resultStr := string(result)
+		if !strings.Contains(resultStr, `<script type="importmap">`) {
+			t.Error("Expected importmap script tag")
+		}
+		if !strings.Contains(resultStr, `<script type="module">import "application";</script>`) {
+			t.Error("Expected application import script when application is present")
+		}
+		if !strings.Contains(resultStr, "application") {
+			t.Error("Expected application import")
+		}
+	})
+
+	t.Run("invalid json in importmap.json", func(t *testing.T) {
+		m := assets.NewManager(fstest.MapFS{
+			"importmap.json": {Data: []byte("invalid json")},
+		}, "/assets")
+
+		_, err := m.ImportMap()
+		if err == nil {
+			t.Error("Expected error for invalid JSON")
+		}
+	})
+
+	t.Run("asset file not found in imports", func(t *testing.T) {
+		importMapJSON := `{
+			"imports": {
+				"missing": "/assets/missing.js",
+				"existing": "/assets/existing.js"
+			}
+		}`
+
+		m := assets.NewManager(fstest.MapFS{
+			"importmap.json": {Data: []byte(importMapJSON)},
+			"existing.js":    {Data: []byte("// Existing code")},
+		}, "/assets")
+
+		result, err := m.ImportMap()
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		resultStr := string(result)
+		// Should still generate importmap even if some files are missing
+		if !strings.Contains(resultStr, `<script type="importmap">`) {
+			t.Error("Expected importmap script tag")
+		}
+		if !strings.Contains(resultStr, "existing") {
+			t.Error("Expected existing import")
+		}
+	})
+
+	t.Run("returns template.HTML type", func(t *testing.T) {
+		importMapJSON := `{
+			"imports": {
+				"test": "/assets/test.js"
+			}
+		}`
+
+		m := assets.NewManager(fstest.MapFS{
+			"importmap.json": {Data: []byte(importMapJSON)},
+			"test.js":        {Data: []byte("// Test code")},
+		}, "/assets")
+
+		result, err := m.ImportMap()
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		// Verify it's actually template.HTML type
+		_ = template.HTML(result)
+	})
+
+	t.Run("handles file open error other than not exist", func(t *testing.T) {
+		// Create a filesystem that will return a different error when opening importmap.json
+		m := assets.NewManager(&errorFS{}, "/assets")
+
+		_, err := m.ImportMap()
+		if err == nil {
+			t.Error("Expected error when file system returns non-NotExist error")
+		}
+	})
+
+	t.Run("mixed success and failure in PathFor resolution", func(t *testing.T) {
+		importMapJSON := `{
+			"imports": {
+				"existing": "/assets/existing.js",
+				"missing1": "/assets/missing1.js",
+				"missing2": "/assets/missing2.js"
+			}
+		}`
+
+		m := assets.NewManager(fstest.MapFS{
+			"importmap.json": {Data: []byte(importMapJSON)},
+			"existing.js":    {Data: []byte("// Existing code")},
+		}, "/assets")
+
+		result, err := m.ImportMap()
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		resultStr := string(result)
+		if !strings.Contains(resultStr, `<script type="importmap">`) {
+			t.Error("Expected importmap script tag")
+		}
+	})
+
+	t.Run("empty imports map", func(t *testing.T) {
+		importMapJSON := `{
+			"imports": {}
+		}`
+
+		m := assets.NewManager(fstest.MapFS{
+			"importmap.json": {Data: []byte(importMapJSON)},
+		}, "/assets")
+
+		result, err := m.ImportMap()
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		resultStr := string(result)
+		if !strings.Contains(resultStr, `<script type="importmap">`) {
+			t.Error("Expected importmap script tag")
+		}
+		if !strings.Contains(resultStr, `"imports": {}`) {
+			t.Error("Expected empty imports object")
+		}
+	})
+}
+
+func TestOpen(t *testing.T) {
+	t.Run("prevents access to Go files", func(t *testing.T) {
+		m := assets.NewManager(fstest.MapFS{
+			"main.go":     {Data: []byte("package main")},
+			"test.go":     {Data: []byte("package test")},
+			"main.js":     {Data: []byte("console.log('hello');")},
+			"dir/file.go": {Data: []byte("package dir")},
+		}, "/assets")
+
+		// Should not be able to open .go files
+		_, err := m.Open("main.go")
+		if err == nil {
+			t.Error("Expected error when opening .go file")
+		}
+
+		_, err = m.Open("test.go")
+		if err == nil {
+			t.Error("Expected error when opening .go file")
+		}
+
+		_, err = m.Open("dir/file.go")
+		if err == nil {
+			t.Error("Expected error when opening .go file in subdirectory")
+		}
+
+		// Should be able to open non-.go files
+		_, err = m.Open("main.js")
+		if err != nil {
+			t.Errorf("Expected no error when opening .js file, got %v", err)
+		}
+	})
+
+	t.Run("resolves hashed filenames", func(t *testing.T) {
+		m := assets.NewManager(fstest.MapFS{
+			"main.js": {Data: []byte("console.log('hello');")},
+		}, "/assets")
+
+		// First, get the hashed path
+		hashedPath, err := m.PathFor("main.js")
+		if err != nil {
+			t.Fatalf("Failed to get hashed path: %v", err)
+		}
+
+		// Extract just the filename from the hashed path
+		parts := strings.Split(hashedPath, "/")
+		hashedFilename := parts[len(parts)-1]
+
+		// Should be able to open using the hashed filename
+		file, err := m.Open(hashedFilename)
+		if err != nil {
+			t.Errorf("Expected no error when opening hashed filename, got %v", err)
+		}
+		if file != nil {
+			file.Close()
+		}
+	})
+
+	t.Run("strips serving path prefix", func(t *testing.T) {
+		m := assets.NewManager(fstest.MapFS{
+			"main.js":      {Data: []byte("console.log('hello');")},
+			"sub/other.js": {Data: []byte("console.log('other');")},
+		}, "/assets")
+
+		// Should be able to open with serving path prefix
+		file, err := m.Open("/assets/main.js")
+		if err != nil {
+			t.Errorf("Expected no error when opening with serving path prefix, got %v", err)
+		}
+		if file != nil {
+			file.Close()
+		}
+
+		file, err = m.Open("/assets/sub/other.js")
+		if err != nil {
+			t.Errorf("Expected no error when opening subdirectory file with prefix, got %v", err)
+		}
+		if file != nil {
+			file.Close()
+		}
+	})
+
+	t.Run("file not found", func(t *testing.T) {
+		m := assets.NewManager(fstest.MapFS{
+			"main.js": {Data: []byte("console.log('hello');")},
+		}, "/assets")
+
+		_, err := m.Open("nonexistent.js")
+		if err == nil {
+			t.Error("Expected error when opening nonexistent file")
+		}
 	})
 }
