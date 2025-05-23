@@ -19,7 +19,11 @@ import (
 func (m *manager) PathFor(name string) (string, error) {
 	normalized := m.normalize(name)
 
-	if hashed, ok := m.fileToHash[normalized]; ok && os.Getenv("GO_ENV") != "development" {
+	m.fmut.Lock()
+	hashed, ok := m.fileToHash[normalized]
+	m.fmut.Unlock()
+
+	if ok && os.Getenv("GO_ENV") != "development" {
 		return path.Join("/", m.servingPath, hashed), nil
 	}
 

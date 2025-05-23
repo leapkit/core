@@ -24,4 +24,4 @@ jobs:
             ${{ runner.os }}-go
       - name: test core
         run: |
-          go test --cover ./... -v
+          go test -race --cover ./... -v
