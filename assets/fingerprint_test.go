@@ -38,6 +38,43 @@ func TestFingerprint(t *testing.T) {
 		}
 	})
 
+	t.Run("concurrent PathFor access", func(t *testing.T) {
+		const goroutines = 20
+		const iterations = 100
+		m := assets.NewManager(fstest.MapFS{
+			"main.js":        {Data: []byte("AAA")},
+			"other/main.js":  {Data: []byte("BBB")},
+			"custom/main.go": {Data: []byte("CCCC")},
+		}, "/files")
+
+		files := []string{
+			"main.js",
+			"other/main.js",
+			"custom/main.go",
+			"/files/main.js",
+			"/files/other/main.js",
+			"/files/custom/main.go",
+		}
+
+		ch := make(chan struct{}, goroutines)
+		for i := 0; i < goroutines; i++ {
+			go func(id int) {
+				defer func() {
+					ch <- struct{}{}
+				}()
+
+				for j := 0; j < iterations; j++ {
+					file := files[(id+j)%len(files)]
+					_, _ = m.PathFor(file)
+				}
+			}(i)
+		}
+
+		for range goroutines {
+			<-ch
+		}
+	})
+
 	t.Run("adds starting slash", func(t *testing.T) {
 		a, err := m.PathFor("files/main.js")
 		if err != nil {

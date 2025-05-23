@@ -19,7 +19,11 @@ import (
 func (m *manager) PathFor(name string) (string, error) {
 	normalized := m.normalize(name)
 
-	if hashed, ok := m.fileToHash[normalized]; ok && os.Getenv("GO_ENV") != "development" {
+	m.fmut.Lock()
+	hashed, ok := m.fileToHash[normalized]
+	m.fmut.Unlock()
+
+	if ok && os.Getenv("GO_ENV") != "development" {
 		return path.Join("/", m.servingPath, hashed), nil
 	}
 
@@ -42,11 +46,11 @@ func (m *manager) PathFor(name string) (string, error) {
 
 	// Delete previous asset hash from map
 	if old, exists := m.fileToHash[normalized]; exists && old != filename {
-		delete(m.HashToFile, old)
+		delete(m.hashToFile, old)
 	}
 
 	m.fileToHash[normalized] = filename
-	m.HashToFile[filename] = normalized
+	m.hashToFile[filename] = normalized
 
 	return path.Join("/", m.servingPath, filename), nil
 }
