@@ -1,7 +1,6 @@
 package render
 
 import (
-	"embed"
 	"io"
 	"os"
 	"path/filepath"
@@ -9,42 +8,45 @@ import (
 	"testing/fstest"
 )
 
-//go:embed testdata/*
-var embeddedTestFS embed.FS
-
 func TestTemplateFS(t *testing.T) {
 	// Create a temporary directory for testing
 	tempDir := t.TempDir()
-	
+
 	// Create some test files in the temp directory
 	testFile := filepath.Join(tempDir, "test.html")
-	err := os.WriteFile(testFile, []byte("local file content"), 0644)
+	err := os.WriteFile(testFile, []byte("local file content"), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
+	embedFS := fstest.MapFS{
+		"test.html": &fstest.MapFile{
+			Data: []byte("embed content"),
+		},
+	}
+
 	tests := []struct {
-		name    string
-		embed   embed.FS
-		dir     string
+		name     string
+		embed    fstest.MapFS
+		dir      string
 		useLocal bool
 	}{
 		{
-			name:    "with directory",
-			embed:   embeddedTestFS,
-			dir:     tempDir,
+			name:     "with directory",
+			embed:    embedFS,
+			dir:      tempDir,
 			useLocal: true,
 		},
 		{
-			name:    "empty directory defaults to pwd",
-			embed:   embeddedTestFS,
-			dir:     "",
+			name:     "empty directory defaults to pwd",
+			embed:    embedFS,
+			dir:      "",
 			useLocal: true,
 		},
 		{
-			name:    "production mode uses embed",
-			embed:   embeddedTestFS,
-			dir:     tempDir,
+			name:     "production mode uses embed",
+			embed:    embedFS,
+			dir:      tempDir,
 			useLocal: false,
 		},
 	}
@@ -54,7 +56,7 @@ func TestTemplateFS(t *testing.T) {
 			// Set environment for test
 			originalEnv := os.Getenv("GO_ENV")
 			defer os.Setenv("GO_ENV", originalEnv)
-			
+
 			if tt.useLocal {
 				os.Setenv("GO_ENV", "development")
 			} else {
@@ -63,8 +65,8 @@ func TestTemplateFS(t *testing.T) {
 
 			fs := TemplateFS(tt.embed, tt.dir)
 
-			if fs.embed != tt.embed {
-				t.Error("Expected embed FS to be set correctly")
+			if fs.embed == nil {
+				t.Error("Expected embed FS to be set")
 			}
 
 			if tt.dir != "" && fs.dir != tt.dir {
@@ -86,7 +88,7 @@ func TestTemplateFS_Open_LocalFile(t *testing.T) {
 	// Create a temporary directory with test files
 	tempDir := t.TempDir()
 	localFile := filepath.Join(tempDir, "local.html")
-	err := os.WriteFile(localFile, []byte("local content"), 0644)
+	err := os.WriteFile(localFile, []byte("local content"), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create local test file: %v", err)
 	}
@@ -159,7 +161,7 @@ func TestTemplateFS_Open_ProductionMode(t *testing.T) {
 	// Create a temporary directory with test files
 	tempDir := t.TempDir()
 	localFile := filepath.Join(tempDir, "test.html")
-	err := os.WriteFile(localFile, []byte("local content"), 0644)
+	err := os.WriteFile(localFile, []byte("local content"), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create local test file: %v", err)
 	}
@@ -212,7 +214,7 @@ func TestTemplateFS_ReadFile(t *testing.T) {
 	tempDir := t.TempDir()
 	localFile := filepath.Join(tempDir, "readme.txt")
 	localContent := "This is local readme content"
-	err := os.WriteFile(localFile, []byte(localContent), 0644)
+	err := os.WriteFile(localFile, []byte(localContent), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create local test file: %v", err)
 	}
@@ -344,13 +346,13 @@ func TestTemplateFS_DirectoryStructure(t *testing.T) {
 	// Create nested directory structure
 	tempDir := t.TempDir()
 	nestedDir := filepath.Join(tempDir, "nested", "deep")
-	err := os.MkdirAll(nestedDir, 0755)
+	err := os.MkdirAll(nestedDir, 0o755)
 	if err != nil {
 		t.Fatalf("Failed to create nested directory: %v", err)
 	}
 
 	nestedFile := filepath.Join(nestedDir, "deep.html")
-	err = os.WriteFile(nestedFile, []byte("deep content"), 0644)
+	err = os.WriteFile(nestedFile, []byte("deep content"), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create nested file: %v", err)
 	}

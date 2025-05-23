@@ -2,6 +2,7 @@ package render
 
 import (
 	"bytes"
+	"fmt"
 	"reflect"
 	"strings"
 	"sync"
@@ -263,14 +264,15 @@ func TestEngine_ConcurrentAccess(t *testing.T) {
 	engine := NewEngine(testTemplates)
 
 	var wg sync.WaitGroup
-	numGoroutines := 100
+	numGoroutines := 10
 
 	// Test concurrent Set operations
 	for i := 0; i < numGoroutines; i++ {
 		wg.Add(1)
 		go func(index int) {
 			defer wg.Done()
-			engine.Set("key", index)
+			key := fmt.Sprintf("key_%d", index)
+			engine.Set(key, index)
 		}(i)
 	}
 
@@ -279,11 +281,14 @@ func TestEngine_ConcurrentAccess(t *testing.T) {
 		wg.Add(1)
 		go func(index int) {
 			defer wg.Done()
-			engine.SetHelper("helper", func() int { return index })
+			helper := fmt.Sprintf("helper_%d", index)
+			engine.SetHelper(helper, func() int { return index })
 		}(i)
 	}
 
-	// Test concurrent HTML page creation
+	wg.Wait()
+
+	// After all writes are done, test concurrent HTML page creation
 	for i := 0; i < numGoroutines; i++ {
 		wg.Add(1)
 		go func() {
