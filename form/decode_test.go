@@ -98,6 +98,26 @@ func TestDecode(t *testing.T) {
 		}
 	})
 
+	t.Run("correct do not decode unexported field", func(t *testing.T) {
+		vals := url.Values{}
+		vals.Set("Name", "test")
+
+		req, _ := http.NewRequest("POST", "/", strings.NewReader(vals.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		var s struct {
+			name string `form:"Name"`
+		}
+
+		if err := form.Decode(req, &s); err != nil {
+			t.Fatal("expected error for invalid time field value")
+		}
+
+		if s.name == "test" {
+			t.Error("Expected empty string, got 'test'")
+		}
+	})
+
 	t.Run("correct skipping field when form tag if middle dash", func(t *testing.T) {
 		data := url.Values{}
 		data.Set("Username", "bob")
@@ -571,7 +591,7 @@ func TestDecode(t *testing.T) {
 		}
 
 		if s.Bs.Age != 2 || s.Bs.Name != "Test" || s.Address != "Test street" {
-			t.Errorf("unexpected struct: %+v", &s.Bs)
+			t.Errorf("unexpected struct: %+v", s.Bs)
 		}
 	})
 
@@ -806,6 +826,5 @@ func TestDecode(t *testing.T) {
 		if err := form.Decode(req, &s); err == nil {
 			t.Fatal("expected error for invalid time field value")
 		}
-
 	})
 }
