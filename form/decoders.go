@@ -9,7 +9,10 @@ import (
 )
 
 var (
-	mu             sync.Mutex
+	mu sync.Mutex
+
+	// customDecoders holds custom decoders for specific types.
+	// The default map includes a decoder for time.Time.
 	customDecoders = map[reflect.Type]func(string) (any, error){
 		reflect.TypeOf(time.Time{}): func(value string) (any, error) {
 			layouts := []string{
@@ -48,6 +51,9 @@ var (
 	}
 )
 
+// RegisterCustomTypeFunc registers a custom decoder function for a specific type.
+// The decoder function should accept a string and return the decoded value or an error.
+// This allows Decode to handle custom types beyond the built-in decoders.
 func RegisterCustomTypeFunc(fn func(string) (any, error), customType any) {
 	mu.Lock()
 	defer mu.Unlock()
@@ -56,6 +62,8 @@ func RegisterCustomTypeFunc(fn func(string) (any, error), customType any) {
 	customDecoders[t] = fn
 }
 
+// builtInDecoders provides decoding functions for Go's basic kinds (bool, int, float, string, etc).
+// These are used by the form decoder to convert string values to the appropriate Go types.
 var builtInDecoders = map[reflect.Kind]func(string) (any, error){
 	reflect.Bool: func(value string) (any, error) {
 		v, err := strconv.ParseBool(value)

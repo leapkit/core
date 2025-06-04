@@ -1,4 +1,6 @@
-// Package decode provides form decoding for nested, pointer-based, and embedded structs.
+// Package form provides utilities for decoding HTTP form values into structs.
+// It supports both standard and multipart forms, and can handle nested structs,
+// slices, pointers, and custom decoders via struct tags.
 package form
 
 import (
@@ -10,6 +12,12 @@ import (
 	"strings"
 )
 
+// Decode parses form values from an *http.Request and populates the fields of dst,
+// which MUST BE a pointer to a struct.
+//
+// This function supports both standard and multipart forms,
+// and can decode nested structs, slices, and pointers. Fields can be tagged with `form`
+// to specify the form key. Returns an error if decoding fails or if dst is not a pointer to a struct.
 func Decode(r *http.Request, dst any) error {
 	if strings.Contains(r.Header.Get("Content-Type"), "multipart/form-data") {
 		if err := r.ParseMultipartForm(32 << 20); err != nil {
@@ -33,6 +41,9 @@ func Decode(r *http.Request, dst any) error {
 	return decodeForm(v.Elem(), r.Form, "")
 }
 
+// decodeForm recursively decodes form values into the provided struct value dst.
+// It handles nested structs, slices, pointers, and custom decoders. The prefix argument
+// is used for nested field names.
 func decodeForm(dst reflect.Value, form map[string][]string, prefix string) error {
 	t := dst.Type()
 
@@ -171,6 +182,8 @@ func decodeForm(dst reflect.Value, form map[string][]string, prefix string) erro
 	return nil
 }
 
+// decodeField sets a single field value from a string, using either a custom decoder
+// or a built-in decoder based on the field's type or kind. Returns an error if conversion fails.
 func decodeField(fieldValue reflect.Value, value string) error {
 	if dec, ok := customDecoders[fieldValue.Type()]; ok {
 		v, err := dec(value)
