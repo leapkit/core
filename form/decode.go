@@ -1,51 +1,209 @@
-// Package form provides form data decoding and validation utilities for HTTP requests.
-// It uses the go-playground/form library for decoding form data into Go structs
-// and includes support for multipart forms and custom type decoders.
+// Package form provides utilities for decoding HTTP form values into structs.
+// It supports both standard and multipart forms, and can handle nested structs,
+// slices, pointers, and custom decoders via struct tags.
 package form
 
 import (
+	"cmp"
+	"errors"
+	"fmt"
 	"net/http"
+	"reflect"
 	"strings"
-
-	"github.com/go-playground/form/v4"
 )
 
-// use a single instance of Decoder, it caches struct info
-var (
-	// Shared decoder instance with default options from
-	// the underlying library.
-	decoder = form.NewDecoder()
-)
-
-// RegisterCustomTypeFunc registers a custom type decoder func for a type.
-// This is useful when you want to use a custom type or a type from an external
-// package like uuid.UUID and want to decode it from a string.
-func RegisterCustomTypeFunc(fn form.DecodeCustomTypeFunc, kind interface{}) {
-	decoder.RegisterCustomTypeFunc(fn, kind)
-}
-
-// Decode decodes the request body into dst, which must be a pointer of a struct.
-// If there is no body or the body is empty, it will take the query string as the
-// body. If the Content-Type is multipart/form-data.
-func Decode(r *http.Request, dst interface{}) error {
-	//MultipartForm
+// Decode parses form values from an *http.Request and populates the fields of dst,
+// which MUST BE a pointer to a struct.
+//
+// This function supports both standard and multipart forms,
+// and can decode nested structs, slices, and pointers. Fields can be tagged with `form`
+// to specify the form key. Returns an error if decoding fails or if dst is not a pointer to a struct.
+func Decode(r *http.Request, dst any) error {
 	if strings.Contains(r.Header.Get("Content-Type"), "multipart/form-data") {
-		err := r.ParseMultipartForm(32 << 20)
-		if err != nil {
+		if err := r.ParseMultipartForm(32 << 20); err != nil {
 			return err
 		}
-	} else {
-		err := r.ParseForm()
-		if err != nil {
-			return err
-		}
+	} else if err := r.ParseForm(); err != nil {
+		return err
 	}
 
-	data := r.Form
-	if len(data) == 0 {
+	if len(r.Form) == 0 {
 		r.Form = r.URL.Query()
 	}
 
-	err := decoder.Decode(dst, r.Form)
-	return err
+	t := reflect.TypeOf(dst)
+	v := reflect.ValueOf(dst)
+
+	if t.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
+		return errors.New("dst must be pointer to struct")
+	}
+
+	return decodeForm(v.Elem(), r.Form, "")
+}
+
+// decodeForm recursively decodes form values into the provided struct value dst.
+// It handles nested structs, slices, pointers, and custom decoders. The prefix argument
+// is used for nested field names.
+func decodeForm(dst reflect.Value, form map[string][]string, prefix string) error {
+	t := dst.Type()
+
+	for i := range t.NumField() {
+		field := t.Field(i)
+		fieldVal := dst.Field(i)
+
+		tagName := field.Tag.Get("form")
+
+		if field.PkgPath != "" || tagName == "-" || !fieldVal.CanSet() {
+			continue
+		}
+
+		fName := cmp.Or(tagName, field.Name)
+		fType := field.Type
+		fKind := fType.Kind()
+		isAnon := field.Anonymous
+		isPtr := fType.Kind() == reflect.Ptr
+
+		if prefix != "" && !isAnon {
+			fName = prefix + "." + fName
+		}
+
+		if isPtr {
+			fType = fType.Elem()
+			fKind = fType.Kind()
+
+			if _, ok := form[fName]; !ok && fKind != reflect.Struct {
+				continue
+			}
+
+			if fieldVal.IsNil() {
+				fieldVal.Set(reflect.New(fType))
+			}
+
+			fieldVal = fieldVal.Elem()
+		}
+
+		switch fKind {
+		case reflect.Struct:
+			subPrefix := fName
+			if isAnon {
+				subPrefix = prefix
+			}
+
+			if dec, ok := customDecoders[fType]; ok {
+				values, ok := form[fName]
+				if !ok || len(values) == 0 {
+					continue
+				}
+
+				v, err := dec(values[0])
+				if err != nil {
+					return fmt.Errorf("cannot convert to %q: %w", fType, err)
+				}
+
+				fieldVal.Set(reflect.ValueOf(v))
+
+				return nil
+			}
+
+			if err := decodeForm(fieldVal, form, subPrefix); err != nil {
+				return err
+			}
+		case reflect.Slice:
+			elemType := fType.Elem()
+			isPtr := elemType.Kind() == reflect.Ptr
+			baseType := elemType
+			if isPtr {
+				baseType = elemType.Elem()
+			}
+
+			if baseType.Kind() == reflect.Struct {
+				slice := reflect.MakeSlice(fType, 0, 0)
+				index := 0
+				for {
+					subKey := fmt.Sprintf("%s[%d]", fName, index)
+					var found bool
+					for k := range form {
+						if strings.HasPrefix(k, subKey+".") {
+							found = true
+							break
+						}
+					}
+					if !found {
+						break
+					}
+
+					el := reflect.New(baseType).Elem()
+					if err := decodeForm(el, form, subKey); err != nil {
+						return err
+					}
+
+					if isPtr {
+						slice = reflect.Append(slice, el.Addr())
+					} else {
+						slice = reflect.Append(slice, el)
+					}
+					index++
+				}
+				fieldVal.Set(slice)
+				continue
+			}
+
+			values, ok := form[fName]
+			if !ok {
+				continue
+			}
+
+			slice := reflect.MakeSlice(fType, len(values), len(values))
+			for i, val := range values {
+				el := slice.Index(i)
+				if isPtr {
+					ptr := reflect.New(baseType).Elem()
+					if err := decodeField(ptr, val); err != nil {
+						return err
+					}
+					ref := reflect.New(baseType)
+					ref.Elem().Set(ptr)
+					el.Set(ref)
+				} else {
+					if err := decodeField(el, val); err != nil {
+						return err
+					}
+				}
+			}
+			fieldVal.Set(slice)
+		default:
+			if values, ok := form[fName]; ok && len(values) > 0 {
+				if err := decodeField(fieldVal, values[0]); err != nil {
+					return fmt.Errorf("failed to set %s: %w", fName, err)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// decodeField sets a single field value from a string, using either a custom decoder
+// or a built-in decoder based on the field's type or kind. Returns an error if conversion fails.
+func decodeField(fieldValue reflect.Value, value string) error {
+	if dec, ok := customDecoders[fieldValue.Type()]; ok {
+		v, err := dec(value)
+		if err != nil {
+			return fmt.Errorf("cannot convert to %q: %w", fieldValue.Type(), err)
+		}
+
+		fieldValue.Set(reflect.ValueOf(v))
+
+		return nil
+	}
+
+	if dec, ok := builtInDecoders[fieldValue.Kind()]; ok {
+		v, err := dec(value)
+		if err != nil {
+			return fmt.Errorf("cannot convert to %q: %w", fieldValue.Kind(), err)
+		}
+
+		fieldValue.Set(reflect.ValueOf(v))
+		return nil
+	}
+	return nil
 }
