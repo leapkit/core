@@ -19,23 +19,19 @@ import (
 // and can decode nested structs, slices, and pointers. Fields can be tagged with `form`
 // to specify the form key. Returns an error if decoding fails or if dst is not a pointer to a struct.
 func Decode(r *http.Request, dst any) error {
+	t := reflect.TypeOf(dst)
+	v := reflect.ValueOf(dst)
+
+	if t.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
+		return errors.New("dst must be pointer to struct")
+	}
+
 	if strings.Contains(r.Header.Get("Content-Type"), "multipart/form-data") {
 		if err := r.ParseMultipartForm(32 << 20); err != nil {
 			return err
 		}
 	} else if err := r.ParseForm(); err != nil {
 		return err
-	}
-
-	if len(r.Form) == 0 {
-		r.Form = r.URL.Query()
-	}
-
-	t := reflect.TypeOf(dst)
-	v := reflect.ValueOf(dst)
-
-	if t.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
-		return errors.New("dst must be pointer to struct")
 	}
 
 	return decodeForm(v.Elem(), r.Form, "")
@@ -53,17 +49,16 @@ func decodeForm(dst reflect.Value, form map[string][]string, prefix string) erro
 
 		tagName := field.Tag.Get("form")
 
-		if field.PkgPath != "" || tagName == "-" || !fieldVal.CanSet() {
+		if !field.IsExported() || tagName == "-" || !fieldVal.CanSet() {
 			continue
 		}
 
 		fName := cmp.Or(tagName, field.Name)
 		fType := field.Type
 		fKind := fType.Kind()
-		isAnon := field.Anonymous
-		isPtr := fType.Kind() == reflect.Ptr
+		isPtr := fKind == reflect.Ptr
 
-		if prefix != "" && !isAnon {
+		if prefix != "" && !field.Anonymous {
 			fName = prefix + "." + fName
 		}
 
@@ -84,11 +79,6 @@ func decodeForm(dst reflect.Value, form map[string][]string, prefix string) erro
 
 		switch fKind {
 		case reflect.Struct:
-			subPrefix := fName
-			if isAnon {
-				subPrefix = prefix
-			}
-
 			if dec, ok := customDecoders[fType]; ok {
 				values, ok := form[fName]
 				if !ok || len(values) == 0 {
@@ -102,7 +92,12 @@ func decodeForm(dst reflect.Value, form map[string][]string, prefix string) erro
 
 				fieldVal.Set(reflect.ValueOf(v))
 
-				return nil
+				continue
+			}
+
+			subPrefix := fName
+			if field.Anonymous {
+				subPrefix = prefix
 			}
 
 			if err := decodeForm(fieldVal, form, subPrefix); err != nil {
