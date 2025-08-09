@@ -173,6 +173,28 @@ func TestDecode(t *testing.T) {
 		}
 	})
 
+	t.Run("correct decoding custom type should continue with the next fields", func(t *testing.T) {
+		data := url.Values{}
+		data.Set("Date", "2025-06-26")
+		data.Set("ID", "2")
+
+		req, _ := http.NewRequest("POST", "/", strings.NewReader(data.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		var s struct {
+			Date time.Time
+			ID   int
+		}
+		err := form.Decode(req, &s)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if s.Date.Format("2006-01-02") != "2025-06-26" || s.ID != 2 {
+			t.Errorf("unexpected custom type: %+v", s)
+		}
+	})
+
 	t.Run("correct decoding slice of data types", func(t *testing.T) {
 		data := url.Values{}
 		data.Add("Tags", "a")
