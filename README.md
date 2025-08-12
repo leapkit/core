@@ -25,7 +25,7 @@
 - Context-aware rendering
 
 ### Form Handling (`form/`)
-- Form data decoding using `github.com/go-playground/form`
+- Form data decoding
 - Form validation system
 - HTTP request form processing
 
