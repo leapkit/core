@@ -48,7 +48,6 @@ The project uses minimal, well-established dependencies:
 - **Plush**: For templating (from Buffalo ecosystem)
 - **Gorilla Sessions**: For session management
 - **SQLite3**: For database support
-- **go-playground/form**: For form processing
 
 ## 📄 License
 
