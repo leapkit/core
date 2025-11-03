@@ -89,7 +89,7 @@ func process(migrator *Migrator, filename string, fileReadFn func(string) ([]byt
 
 	err = migrator.Run(matches[1], matches[2], string(content))
 	if err != nil {
-		return fmt.Errorf("error running migration: %w", err)
+		return fmt.Errorf("%w", err)
 	}
 
 	return nil
