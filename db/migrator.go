@@ -40,7 +40,7 @@ func (m *Migrator) Run(timestamp, name, sql string) error {
 
 	_, err = m.db.Exec(sql)
 	if err != nil {
-		err = fmt.Errorf("❌ %s: error  migration: %w", migName, err)
+		err = fmt.Errorf("❌ %s: error running migration: %w", migName, err)
 		return err
 	}
 
