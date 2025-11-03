@@ -26,11 +26,12 @@ func (m *Migrator) Setup() error {
 // Run a particular database migration and inserting its timestamp
 // on the migrations table.
 func (m *Migrator) Run(timestamp, name, sql string) error {
+	migName := timestamp + "-" + name
 	var exists bool
-	row :=	m.db.QueryRow("SELECT EXISTS (SELECT 1 FROM schema_migrations WHERE timestamp = $1)", timestamp)
+	row := m.db.QueryRow("SELECT EXISTS (SELECT 1 FROM schema_migrations WHERE timestamp = $1)", timestamp)
 	err := row.Scan(&exists)
 	if err != nil {
-		return fmt.Errorf("error running migration: %w", err)
+		return fmt.Errorf("❌ %s: error checking last migration: %w", migName, err)
 	}
 
 	if exists {
@@ -39,17 +40,17 @@ func (m *Migrator) Run(timestamp, name, sql string) error {
 
 	_, err = m.db.Exec(sql)
 	if err != nil {
-		err = fmt.Errorf("error running migration: %w", err)
+		err = fmt.Errorf("❌ %s: error running migration: %w", migName, err)
 		return err
 	}
 
 	_, err = m.db.Exec("INSERT INTO schema_migrations (timestamp) VALUES ($1);", timestamp)
 	if err != nil {
-		err = fmt.Errorf("error running migration: %w", err)
+		err = fmt.Errorf("❌ %s: error updating migrations table: %w", migName, err)
 		return err
 	}
 
-	fmt.Printf("✅ Migration %v (%v) applied.\n", name, timestamp)
+	fmt.Printf("✅ Migration %v (%v) applied.\n", migName, timestamp)
 
 	return nil
 }
