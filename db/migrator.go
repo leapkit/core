@@ -26,18 +26,18 @@ func (m *Migrator) Setup() error {
 // Run a particular database migration and inserting its timestamp
 // on the migrations table.
 func (m *Migrator) Run(timestamp, name, sql string) error {
-	migName := timestamp + "-" + name
 	var exists bool
 	row := m.db.QueryRow("SELECT EXISTS (SELECT 1 FROM schema_migrations WHERE timestamp = $1)", timestamp)
 	err := row.Scan(&exists)
 	if err != nil {
-		return fmt.Errorf("❌ %s: error checking last migration: %w", migName, err)
+		return fmt.Errorf("❌ error checking last migration: %w", err)
 	}
 
 	if exists {
 		return nil
 	}
 
+	migName := timestamp + "-" + name
 	_, err = m.db.Exec(sql)
 	if err != nil {
 		err = fmt.Errorf("❌ %s: error running migration: %w", migName, err)
@@ -46,7 +46,7 @@ func (m *Migrator) Run(timestamp, name, sql string) error {
 
 	_, err = m.db.Exec("INSERT INTO schema_migrations (timestamp) VALUES ($1);", timestamp)
 	if err != nil {
-		err = fmt.Errorf("❌ %s: error updating migrations table: %w", migName, err)
+		err = fmt.Errorf("❌ %w", err)
 		return err
 	}
 
