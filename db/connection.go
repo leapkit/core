@@ -44,18 +44,22 @@ func ConnectionFn(url string, opts ...connectionOption) ConnFn {
 			v()
 		}
 
-		url := url
-		if strings.Contains(url, "?") {
-			url = url + "&" + connParams
+		// Modify the URL to include connection params
+		// if any.
+		modURL := url
+		if strings.Contains(modURL, "?") {
+			modURL = modURL + "&" + connParams
 		} else if connParams != "" {
-			url = url + "?" + connParams
+			modURL = modURL + "?" + connParams
 		}
 
-		conn, err := sql.Open(driverName, url)
+		conn, err := sql.Open(driverName, modURL)
 		if err != nil {
 			return nil, err
 		}
 
+		// This uses url instead of modURL while the params apply
+		// to all connections.
 		dbPool[url] = conn
 
 		return conn, nil
