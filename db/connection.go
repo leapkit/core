@@ -2,6 +2,8 @@ package db
 
 import (
 	"database/sql"
+	"net/url"
+	"strings"
 	"sync"
 )
 
@@ -9,8 +11,11 @@ var (
 	dbPool = map[string]*sql.DB{}
 	cmux   sync.Mutex
 
-	//DriverName defaults to postgres
+	// DriverName defaults to postgres
 	driverName = "postgres"
+
+	// Connection params to be appended to the connection string
+	connParams string
 )
 
 // ConnFn is the database connection builder function that
@@ -39,11 +44,22 @@ func ConnectionFn(url string, opts ...connectionOption) ConnFn {
 			v()
 		}
 
-		conn, err := sql.Open(driverName, url)
+		// Modify the URL to include connection params
+		// if any.
+		modURL := url
+		if strings.Contains(modURL, "?") {
+			modURL = modURL + "&" + connParams
+		} else if connParams != "" {
+			modURL = modURL + "?" + connParams
+		}
+
+		conn, err := sql.Open(driverName, modURL)
 		if err != nil {
 			return nil, err
 		}
 
+		// This uses url instead of modURL while the params apply
+		// to all connections.
 		dbPool[url] = conn
 
 		return conn, nil
@@ -55,5 +71,26 @@ func ConnectionFn(url string, opts ...connectionOption) ConnFn {
 func WithDriver(name string) connectionOption {
 	return func() {
 		driverName = name
+	}
+}
+
+// Params allows to specify additional connection parameters
+// that will be encoded as URL params next to the connection string.
+// params should be in key,value,key,value,... format.
+// e.g Params("sslmode", "disable", "timezone", "UTC")
+func Params(params ...string) connectionOption {
+	vals := url.Values{}
+	for i := 0; i < len(params); i += 2 {
+		key := params[i]
+		if i+1 >= len(params) {
+			vals.Add(key, "")
+			break
+		}
+
+		vals.Add(key, params[i+1])
+	}
+
+	return func() {
+		connParams = vals.Encode()
 	}
 }
