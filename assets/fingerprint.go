@@ -9,6 +9,18 @@ import (
 	"strings"
 )
 
+// Path returns the fingerprinted path for a given
+// file. If an error occurs during the process, it
+// returns the original name.
+func (m *manager) Path(name string) string {
+	path, err := m.PathFor(name)
+	if err != nil {
+		return name
+	}
+
+	return path
+}
+
 // PathFor returns the fingerprinted path for a given
 // file. If the path passed contains the hash it will
 // return the same path only in GO_ENV=development
@@ -23,6 +35,8 @@ func (m *manager) PathFor(name string) (string, error) {
 	hashed, ok := m.fileToHash[normalized]
 	m.fmut.Unlock()
 
+	// Return cached hashed filename if available
+	// and not in development environment
 	if ok && os.Getenv("GO_ENV") != "development" {
 		return path.Join("/", m.servingPath, hashed), nil
 	}

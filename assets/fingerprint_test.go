@@ -59,7 +59,7 @@ func TestFingerprint(t *testing.T) {
 		}
 
 		ch := make(chan struct{}, goroutines)
-		for i := 0; i < goroutines; i++ {
+		for i := range goroutines {
 			go func(id int) {
 				defer func() {
 					ch <- struct{}{}
@@ -309,6 +309,35 @@ func TestFingerprint(t *testing.T) {
 
 			if a != b {
 				t.Errorf("Expected %s to equal %s", a, b)
+			}
+		})
+	})
+
+	t.Run("Path", func(t *testing.T) {
+		t.Run("returns fingerprinted path on success", func(t *testing.T) {
+			fingerprintedPath, err := m.PathFor("main.js")
+			if err != nil {
+				t.Fatalf("PathFor failed: %v", err)
+			}
+
+			path := m.Path("main.js")
+			if path != fingerprintedPath {
+				t.Errorf("expected %q, got %q", fingerprintedPath, path)
+			}
+		})
+
+		t.Run("returns original name on error", func(t *testing.T) {
+			originalName := "nonexistent.js"
+			path := m.Path(originalName)
+
+			if path != originalName {
+				t.Errorf("expected %q, got %q", originalName, path)
+			}
+
+			// Also check the error from PathFor to be sure
+			_, err := m.PathFor(originalName)
+			if err == nil {
+				t.Errorf("expected PathFor to return an error for %q", originalName)
 			}
 		})
 	})
