@@ -46,13 +46,12 @@ func createPostgres(conURL string) error {
 		return fmt.Errorf("invalid database URL: %s", conURL)
 	}
 
-	db, err := sql.Open(
-		"postgres",
-		fmt.Sprintf(
-			"postgres://%s:%s@%s:%s/postgres?sslmode=disable",
-			matches[1], matches[2], matches[3], matches[4],
-		),
+	dsn := fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/postgres?sslmode=disable",
+		matches[1], matches[2], matches[3], matches[4],
 	)
+
+	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		return fmt.Errorf("connecting to database: %w", err)
 	}
