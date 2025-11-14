@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"net/url"
+	"strings"
 	"sync"
 )
 
@@ -43,7 +44,14 @@ func ConnectionFn(url string, opts ...connectionOption) ConnFn {
 			v()
 		}
 
-		conn, err := sql.Open(driverName, url+connParams)
+		url := url
+		if strings.Contains(url, "?") {
+			url = url + "&" + connParams
+		} else if connParams != "" {
+			url = url + "?" + connParams
+		}
+
+		conn, err := sql.Open(driverName, url)
 		if err != nil {
 			return nil, err
 		}
@@ -64,7 +72,7 @@ func WithDriver(name string) connectionOption {
 
 // Params allows to specify additional connection parameters
 // that will be encoded as URL params next to the connection string.
-// params should to be in key,value,key,value,... format.
+// params should be in key,value,key,value,... format.
 // e.g Params("sslmode", "disable", "timezone", "UTC")
 func Params(params ...string) connectionOption {
 	vals := url.Values{}
@@ -79,6 +87,6 @@ func Params(params ...string) connectionOption {
 	}
 
 	return func() {
-		connParams = "?" + vals.Encode()
+		connParams = vals.Encode()
 	}
 }
