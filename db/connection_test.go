@@ -86,34 +86,45 @@ func TestConnection(t *testing.T) {
 	})
 
 	t.Run("connection params", func(t *testing.T) {
-		connFn := db.ConnectionFn(
-			"memory.db",
-
-			db.WithDriver("sqlite3"),
-			db.Params("_cache_size", "54321"), // Applying cache size parameter to check it later.
-		)
-
-		conn, err := connFn()
-		if err != nil {
-			t.Errorf("Expected nil, got err %v", err)
-		}
-		defer conn.Close()
-
-		rows, err := conn.Query("pragma cache_size;")
-		if err != nil {
-			t.Errorf("Expected nil, got err %v", err)
-		}
-		defer rows.Close()
-
-		var size int
-		for rows.Next() {
-			if err := rows.Scan(&size); err != nil {
-				t.Errorf("Expected nil, got err %v", err)
-			}
+		cases := []string{
+			":memory:",
+			"file::memory:?cache=shared",
+			t.TempDir() + "memory.db",
+			t.TempDir() + "memory.db?mode=memory",
 		}
 
-		if size != 54321 {
-			t.Fatalf("Expected cache size to be 54321, got %v", size)
+		for _, tcase := range cases {
+			t.Run(tcase, func(t *testing.T) {
+				connFn := db.ConnectionFn(
+					tcase,
+
+					db.WithDriver("sqlite3"),
+					db.Params("_cache_size", "54321"), // Applying cache size parameter to check it later.
+				)
+
+				conn, err := connFn()
+				if err != nil {
+					t.Errorf("Expected nil, got err %v", err)
+				}
+				defer conn.Close()
+
+				rows, err := conn.Query("pragma cache_size;")
+				if err != nil {
+					t.Errorf("Expected nil, got err %v", err)
+				}
+				defer rows.Close()
+
+				var size int
+				for rows.Next() {
+					if err := rows.Scan(&size); err != nil {
+						t.Errorf("Expected nil, got err %v", err)
+					}
+				}
+
+				if size != 54321 {
+					t.Fatalf("Expected cache size to be 54321, got %v", size)
+				}
+			})
 		}
 	})
 }
