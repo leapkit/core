@@ -12,15 +12,13 @@ import (
 	"strings"
 )
 
-var (
-	// postgresURLExp is the regular expression to extract the database name
-	// and the user credentials from the database URL.
-	postgresURLExp = regexp.MustCompile(`postgres://(.*):(.*)@(.*):(.*)/([^?]*)`)
-)
+// postgresURLExp is the regular expression to extract the database name
+// and the user credentials from the database URL.
+var postgresURLExp = regexp.MustCompile(`postgres://(.*):(.*)@(.*):(.*)/([^?]*)`)
 
 // Create a new database based on the passed URL.
 func Create(url string) error {
-	var createFn func(string) error = createSQLite
+	createFn := createSQLite
 	if strings.Contains(url, "postgres") {
 		createFn = createPostgres
 	}
@@ -48,7 +46,12 @@ func createPostgres(conURL string) error {
 		return fmt.Errorf("invalid database URL: %s", conURL)
 	}
 
-	db, err := sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@%s:%s/postgres?sslmode=disable", matches[1], matches[2], matches[3], matches[4]))
+	dsn := fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/postgres?sslmode=disable",
+		matches[1], matches[2], matches[3], matches[4],
+	)
+
+	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		return fmt.Errorf("connecting to database: %w", err)
 	}
@@ -56,7 +59,6 @@ func createPostgres(conURL string) error {
 	var exists int
 	row := db.QueryRow("SELECT COUNT(datname) FROM pg_database WHERE datname ilike $1", matches[5])
 	err = row.Scan(&exists)
-
 	if err != nil {
 		return err
 	}
@@ -75,7 +77,7 @@ func createPostgres(conURL string) error {
 
 // Drop a database based on the passed URL.
 func Drop(url string) error {
-	var dropFn func(string) error = dropSQLite
+	dropFn := dropSQLite
 	if strings.Contains(url, "postgres") {
 		dropFn = dropPostgres
 	}
