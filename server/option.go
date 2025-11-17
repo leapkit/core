@@ -8,7 +8,7 @@ import (
 	"go.leapkit.dev/core/server/session"
 )
 
-// Options for the server
+// Option for the server
 type Option func(*mux)
 
 // WithHost allows to specify the host to run the server at
@@ -46,7 +46,10 @@ func WithAssets(embedded fs.FS, servingPath string) Option {
 	return func(m *mux) {
 		m.Use(func(h http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if vlr, ok := r.Context().Value("valuer").(interface{ Set(string, any) }); ok {
+				// finding the valuer from the context
+				vlr := ValuerFromContext(r.Context())
+				if vlr != nil {
+					vlr.Set("assetManager", manager)
 					vlr.Set("assetPath", manager.PathFor)
 					vlr.Set("importMap", manager.ImportMap)
 				}
