@@ -41,14 +41,23 @@ func WithSession(secret, name string, options ...session.Option) Option {
 	}
 }
 
+// WithAssets allows to serve embedded assets from a given
+// embedded filesystem at a specified serving path. It sets up
+// three context values: "assetManager", "assetPath", and "importMap".
+// These values can be used by other components to manage and serve
+// assets efficiently.
 func WithAssets(embedded fs.FS, servingPath string) Option {
 	manager := assets.NewManager(embedded, servingPath)
 	return func(m *mux) {
 		m.Use(func(h http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				// finding the valuer from the context
-				vlr := ValuerFromContext(r.Context())
-				if vlr != nil {
+				// retrieving the valuer from the context
+				vlr, ok := r.Context().Value(valuerContextKey).(interface {
+					Set(string, any)
+				})
+
+				// setting values in the context valuer
+				if ok {
 					vlr.Set("assetManager", manager)
 					vlr.Set("assetPath", manager.PathFor)
 					vlr.Set("importMap", manager.ImportMap)
