@@ -12,19 +12,23 @@ func FromCtx(ctx context.Context) *Page {
 	page := ctx.Value("renderer").(*Page)
 
 	// Setting values from the valuer in the page
-	vlr, ok := ctx.Value("valuer").(interface{ Values() map[string]any })
+	type vlr interface {
+		Values() map[string]any
+	}
+
+	vlx, ok := ctx.Value("valuer").(vlr)
 	if !ok {
 		return page
 	}
 
-	for k, v := range vlr.Values() {
+	for k, v := range vlx.Values() {
 		page.Set(k, v)
 	}
 
 	return page
 }
 
-// FromCtx returns the render engine from the context,
+// EngineFromCtx returns the render engine from the context,
 // it assumes the render render engine has been set
 // by the render middleware.
 func EngineFromCtx(ctx context.Context) *Engine {

@@ -6,6 +6,29 @@ import (
 	"sync"
 )
 
+const (
+	valuerContextKey = "valuer"
+)
+
+// Valuer interface to store and retrieve values from the request context
+// these values can be used by other components such as the render engine
+// or the assets manager.
+type Valuer interface {
+	Values() map[string]any
+	Value(string) any
+	Set(string, any)
+}
+
+// ValuerFromContext retrieves the Valuer from the context.
+func ValuerFromContext(ctx context.Context) Valuer {
+	vlr, ok := ctx.Value(valuerContextKey).(Valuer)
+	if !ok {
+		return nil
+	}
+
+	return vlr
+}
+
 // values is a map where we can store values for the request context
 // these values will then be available for other components such as
 // the render engine.
@@ -45,7 +68,7 @@ func setValuer(next http.Handler) http.Handler {
 			},
 		}
 
-		r = r.WithContext(context.WithValue(r.Context(), "valuer", vlr))
+		r = r.WithContext(context.WithValue(r.Context(), valuerContextKey, vlr))
 		next.ServeHTTP(w, r)
 	})
 }
