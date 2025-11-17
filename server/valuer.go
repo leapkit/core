@@ -10,18 +10,12 @@ const (
 	valuerContextKey = "valuer"
 )
 
-// Valuer interface to store and retrieve values from the request context
-// these values can be used by other components such as the render engine
-// or the assets manager.
-type Valuer interface {
-	Values() map[string]any
-	Value(string) any
-	Set(string, any)
+type valueReader interface {
+	Value(key string) any
 }
 
-// ValuerFromContext retrieves the Valuer from the context.
-func ValuerFromContext(ctx context.Context) Valuer {
-	vlr, ok := ctx.Value(valuerContextKey).(Valuer)
+func Valuer(ctx context.Context) valueReader {
+	vlr, ok := ctx.Value(valuerContextKey).(valueReader)
 	if !ok {
 		return nil
 	}
