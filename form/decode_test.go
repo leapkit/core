@@ -7,12 +7,19 @@ import (
 	"net/http"
 	"net/url"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"go.leapkit.dev/core/form"
 )
+
+type customStringer string
+
+func (cs customStringer) String() string {
+	return string(cs)
+}
 
 func TestDecode(t *testing.T) {
 	t.Run("correct happy path", func(t *testing.T) {
@@ -847,6 +854,147 @@ func TestDecode(t *testing.T) {
 
 		if err := form.Decode(req, &s); err == nil {
 			t.Fatal("expected error for invalid time field value")
+		}
+	})
+
+	t.Run("correct RegisterCustomTypeFunc with concrete type", func(t *testing.T) {
+		type CustomType1 int
+
+		form.RegisterCustomTypeFunc(func(s string) (CustomType1, error) {
+			n, err := strconv.Atoi(s)
+			return CustomType1(n), err
+		})
+
+		vals := url.Values{}
+		vals.Set("field_a", "42")
+
+		req, _ := http.NewRequest("POST", "/", strings.NewReader(vals.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		var s struct {
+			FieldA CustomType1 `form:"field_a"`
+		}
+
+		if err := form.Decode(req, &s); err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if s.FieldA != 42 {
+			t.Errorf("expected FieldA to be 42, got %v", s.FieldA)
+		}
+	})
+
+	t.Run("correct RegisterCustomTypeFunc with pointer field", func(t *testing.T) {
+		type CustomType1 int
+
+		form.RegisterCustomTypeFunc(func(s string) (CustomType1, error) {
+			n, err := strconv.Atoi(s)
+			return CustomType1(n), err
+		})
+
+		vals := url.Values{}
+		vals.Set("present", "7")
+
+		req, _ := http.NewRequest("POST", "/", strings.NewReader(vals.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		var s struct {
+			Present *CustomType1 `form:"present"`
+			Absent  *CustomType1 `form:"absent"`
+		}
+
+		if err := form.Decode(req, &s); err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if s.Present == nil || *s.Present != 7 {
+			t.Errorf("expected Present to be pointer to 7, got %v", s.Present)
+		}
+
+		if s.Absent != nil {
+			t.Errorf("expected Absent to be nil, got %v", s.Absent)
+		}
+	})
+
+	t.Run("correct RegisterCustomTypeFunc with any and customType hint", func(t *testing.T) {
+		type CustomType2 struct{ V int }
+
+		form.RegisterCustomTypeFunc(func(s string) (any, error) {
+			n, err := strconv.Atoi(s)
+			return CustomType2{V: n}, err
+		}, CustomType2{})
+
+		vals := url.Values{}
+		vals.Set("field", "10")
+
+		req, _ := http.NewRequest("POST", "/", strings.NewReader(vals.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		var s struct {
+			Field CustomType2 `form:"field"`
+		}
+
+		if err := form.Decode(req, &s); err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if s.Field.V != 10 {
+			t.Errorf("expected Field.V to be 10, got %v", s.Field.V)
+		}
+	})
+
+	t.Run("correct RegisterCustomTypeFunc with interface type", func(t *testing.T) {
+		form.RegisterCustomTypeFunc(func(s string) (fmt.Stringer, error) {
+			return customStringer(s), nil
+		})
+
+		vals := url.Values{}
+		vals.Set("field", "hello")
+
+		req, _ := http.NewRequest("POST", "/", strings.NewReader(vals.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		var s struct {
+			Field fmt.Stringer `form:"field"`
+		}
+
+		if err := form.Decode(req, &s); err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if s.Field == nil {
+			t.Fatal("expected Field to not be nil")
+		}
+
+		if s.Field.String() != "hello" {
+			t.Errorf("expected Field.String() to be %q, got %q", "hello", s.Field.String())
+		}
+	})
+
+	t.Run("incorrect RegisterCustomTypeFunc decoder error", func(t *testing.T) {
+		type CustomType3 int
+
+		form.RegisterCustomTypeFunc(func(s string) (CustomType3, error) {
+			return 0, fmt.Errorf("custom decode error: %q", s)
+		})
+
+		vals := url.Values{}
+		vals.Set("field", "bad")
+
+		req, _ := http.NewRequest("POST", "/", strings.NewReader(vals.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		var s struct {
+			Field CustomType3 `form:"field"`
+		}
+
+		err := form.Decode(req, &s)
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+
+		if !strings.Contains(err.Error(), "custom decode error") {
+			t.Errorf("expected error to contain %q, got %q", "custom decode error", err.Error())
 		}
 	})
 }
