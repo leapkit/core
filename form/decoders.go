@@ -14,7 +14,7 @@ var (
 	// customDecoders holds custom decoders for specific types.
 	// The default map includes a decoder for time.Time.
 	customDecoders = map[reflect.Type]func(string) (any, error){
-		reflect.TypeOf(time.Time{}): func(value string) (any, error) {
+		reflect.TypeFor[time.Time](): func(value string) (any, error) {
 			layouts := []string{
 				time.Layout,
 				time.ANSIC,
@@ -51,15 +51,33 @@ var (
 	}
 )
 
-// RegisterCustomTypeFunc registers a custom decoder function for a specific type.
-// The decoder function should accept a string and return the decoded value or an error.
-// This allows Decode to handle custom types beyond the built-in decoders.
-func RegisterCustomTypeFunc(fn func(string) (any, error), customType any) {
+// RegisterCustomTypeFunc registers a custom decoder function for type T,
+// allowing Decode to handle types beyond the built-in decoders.
+//
+// The type to register is inferred from the return type of fn:
+//
+//	form.RegisterCustomTypeFunc(func(s string) (MyType, error) { ... })
+//
+// For interface return types like fmt.Stringer, the decoder is registered
+// under the interface type itself:
+//
+//	form.RegisterCustomTypeFunc(func(s string) (fmt.Stringer, error) { ... })
+//
+// For backward compatibility, when fn returns any, pass a zero-value instance
+// of the target type via customType so the decoder is registered under
+// the concrete type rather than interface{}:
+//
+//	form.RegisterCustomTypeFunc(func(s string) (any, error) { ... }, MyType{})
+func RegisterCustomTypeFunc[T any](fn func(string) (T, error), customType ...any) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	t := reflect.TypeOf(customType)
-	customDecoders[t] = fn
+	rt := reflect.TypeFor[T]()
+	if rt.Kind() == reflect.Interface && len(customType) > 0 {
+		rt = reflect.TypeOf(customType[0])
+	}
+
+	customDecoders[rt] = func(s string) (any, error) { return fn(s) }
 }
 
 // builtInDecoders provides decoding functions for Go's basic kinds (bool, int, float, string, etc).
