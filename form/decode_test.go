@@ -449,19 +449,19 @@ func TestDecode(t *testing.T) {
 			field string
 			val   string
 		}{
-			{"Bool", "notabool"},
-			{"Int", "notanint"},
-			{"Int8", "notanint8"},
-			{"Int16", "notanint16"},
-			{"Int32", "notanint32"},
-			{"Int64", "notanint64"},
+			{"Bool", "notABool"},
+			{"Int", "notAnInt"},
+			{"Int8", "notAnInt8"},
+			{"Int16", "notAnInt16"},
+			{"Int32", "notAnInt32"},
+			{"Int64", "notAnInt64"},
 			{"Uint", "-1"},
 			{"Uint8", "-2"},
 			{"Uint16", "-3"},
 			{"Uint32", "-4"},
 			{"Uint64", "-5"},
-			{"Float32", "notafloat"},
-			{"Float64", "notafloat"},
+			{"Float32", "notaFloat"},
+			{"Float64", "notaFloat"},
 		}
 
 		for _, tc := range invalidCases {
@@ -995,6 +995,413 @@ func TestDecode(t *testing.T) {
 
 		if !strings.Contains(err.Error(), "custom decode error") {
 			t.Errorf("expected error to contain %q, got %q", "custom decode error", err.Error())
+		}
+	})
+
+	t.Run("correct decoding self-referencing struct with data", func(t *testing.T) {
+		type Node struct {
+			ID       string
+			Name     string
+			Parent   *Node
+			Sibling  *Node
+			Metadata map[string]string
+		}
+
+		vals := url.Values{}
+		vals.Set("ID", "node-1")
+		vals.Set("Name", "Root Node")
+		vals.Set("Parent.ID", "parent-1")
+		vals.Set("Parent.Name", "Parent Node")
+		vals.Set("Sibling.ID", "sibling-1")
+		vals.Set("Sibling.Name", "Sibling Node")
+
+		req, _ := http.NewRequest("POST", "/", strings.NewReader(vals.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		var node Node
+		if err := form.Decode(req, &node); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if node.ID != "node-1" {
+			t.Errorf("expected ID to be %q, got %q", "node-1", node.ID)
+		}
+
+		if node.Name != "Root Node" {
+			t.Errorf("expected Name to be %q, got %q", "Root Node", node.Name)
+		}
+
+		if node.Parent == nil {
+			t.Fatal("expected Parent to not be nil")
+		}
+
+		if node.Parent.ID != "parent-1" {
+			t.Errorf("expected Parent.ID to be %q, got %q", "parent-1", node.Parent.ID)
+		}
+
+		if node.Parent.Name != "Parent Node" {
+			t.Errorf("expected Parent.Name to be %q, got %q", "Parent Node", node.Parent.Name)
+		}
+
+		if node.Sibling == nil {
+			t.Fatal("expected Sibling to not be nil")
+		}
+
+		if node.Sibling.ID != "sibling-1" {
+			t.Errorf("expected Sibling.ID to be %q, got %q", "sibling-1", node.Sibling.ID)
+		}
+
+		if node.Sibling.Name != "Sibling Node" {
+			t.Errorf("expected Sibling.Name to be %q, got %q", "Sibling Node", node.Sibling.Name)
+		}
+
+		// Verify that deeply nested fields don't get populated (no infinite recursion)
+		if node.Parent.Parent != nil {
+			t.Error("expected Parent.Parent to be nil (no form data)")
+		}
+
+		if node.Sibling.Sibling != nil {
+			t.Error("expected Sibling.Sibling to be nil (no form data)")
+		}
+	})
+
+	t.Run("correct skipping self-referencing struct without data", func(t *testing.T) {
+		type Node struct {
+			ID     string
+			Name   string
+			Parent *Node
+		}
+
+		vals := url.Values{}
+		vals.Set("ID", "node-1")
+		vals.Set("Name", "Root Node")
+		// No Parent.* fields
+
+		req, _ := http.NewRequest("POST", "/", strings.NewReader(vals.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		var node Node
+		if err := form.Decode(req, &node); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if node.ID != "node-1" {
+			t.Errorf("expected ID to be %q, got %q", "node-1", node.ID)
+		}
+
+		if node.Name != "Root Node" {
+			t.Errorf("expected Name to be %q, got %q", "Root Node", node.Name)
+		}
+
+		// Parent should be nil since no form data exists for it
+		if node.Parent != nil {
+			t.Errorf("expected Parent to be nil, got %+v", node.Parent)
+		}
+	})
+
+	t.Run("correct decoding multiple levels of nested self-referencing structs", func(t *testing.T) {
+		type TreeNode struct {
+			ID       string
+			Value    int
+			Parent   *TreeNode
+			Children []*TreeNode
+		}
+
+		vals := url.Values{}
+		// Root node
+		vals.Set("ID", "root")
+		vals.Set("Value", "100")
+
+		// Parent of root
+		vals.Set("Parent.ID", "grandparent")
+		vals.Set("Parent.Value", "200")
+
+		// Grandparent of root
+		vals.Set("Parent.Parent.ID", "great-grandparent")
+		vals.Set("Parent.Parent.Value", "300")
+
+		// Children of root
+		vals.Set("Children[0].ID", "child-1")
+		vals.Set("Children[0].Value", "10")
+		vals.Set("Children[1].ID", "child-2")
+		vals.Set("Children[1].Value", "20")
+
+		// Grandchildren through first child
+		vals.Set("Children[0].Children[0].ID", "grandchild-1")
+		vals.Set("Children[0].Children[0].Value", "5")
+
+		req, _ := http.NewRequest("POST", "/", strings.NewReader(vals.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		var root TreeNode
+		if err := form.Decode(req, &root); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		// Verify root
+		if root.ID != "root" || root.Value != 100 {
+			t.Errorf("expected root (root, 100), got (%s, %d)", root.ID, root.Value)
+		}
+
+		// Verify parent
+		if root.Parent == nil {
+			t.Fatal("expected Parent to not be nil")
+		}
+		if root.Parent.ID != "grandparent" || root.Parent.Value != 200 {
+			t.Errorf("expected parent (grandparent, 200), got (%s, %d)", root.Parent.ID, root.Parent.Value)
+		}
+
+		// Verify grandparent
+		if root.Parent.Parent == nil {
+			t.Fatal("expected Parent.Parent to not be nil")
+		}
+		if root.Parent.Parent.ID != "great-grandparent" || root.Parent.Parent.Value != 300 {
+			t.Errorf("expected grandparent (great-grandparent, 300), got (%s, %d)",
+				root.Parent.Parent.ID, root.Parent.Parent.Value)
+		}
+
+		// Verify great-grandparent has no parent (no form data)
+		if root.Parent.Parent.Parent != nil {
+			t.Error("expected great-grandparent's parent to be nil")
+		}
+
+		// Verify children
+		if len(root.Children) != 2 {
+			t.Fatalf("expected 2 children, got %d", len(root.Children))
+		}
+		if root.Children[0].ID != "child-1" || root.Children[0].Value != 10 {
+			t.Errorf("expected child-1 (child-1, 10), got (%s, %d)", root.Children[0].ID, root.Children[0].Value)
+		}
+		if root.Children[1].ID != "child-2" || root.Children[1].Value != 20 {
+			t.Errorf("expected child-2 (child-2, 20), got (%s, %d)", root.Children[1].ID, root.Children[1].Value)
+		}
+
+		// Verify grandchildren
+		if len(root.Children[0].Children) != 1 {
+			t.Fatalf("expected 1 grandchild, got %d", len(root.Children[0].Children))
+		}
+		if root.Children[0].Children[0].ID != "grandchild-1" || root.Children[0].Children[0].Value != 5 {
+			t.Errorf("expected grandchild (grandchild-1, 5), got (%s, %d)",
+				root.Children[0].Children[0].ID, root.Children[0].Children[0].Value)
+		}
+
+		// Verify second child has no children (no form data)
+		if len(root.Children[1].Children) > 0 {
+			t.Errorf("expected child-2 to have no children, got %d", len(root.Children[1].Children))
+		}
+	})
+
+	t.Run("correct decoding partial nested data with missing fields", func(t *testing.T) {
+		type Person struct {
+			ID        string
+			FirstName string
+			LastName  string
+			Age       int
+			Spouse    *Person
+			Manager   *Person
+		}
+
+		vals := url.Values{}
+		// Main person - all fields
+		vals.Set("ID", "person-1")
+		vals.Set("FirstName", "John")
+		vals.Set("LastName", "Doe")
+		vals.Set("Age", "30")
+
+		// Spouse - only ID and FirstName
+		vals.Set("Spouse.ID", "person-2")
+		vals.Set("Spouse.FirstName", "Jane")
+		// Missing: Spouse.LastName, Spouse.Age
+
+		// Manager - only ID
+		vals.Set("Manager.ID", "person-3")
+		// Missing: Manager.FirstName, Manager.LastName, Manager.Age
+
+		req, _ := http.NewRequest("POST", "/", strings.NewReader(vals.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		var person Person
+		if err := form.Decode(req, &person); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		// Verify main person
+		if person.ID != "person-1" {
+			t.Errorf("expected ID %q, got %q", "person-1", person.ID)
+		}
+		if person.FirstName != "John" {
+			t.Errorf("expected FirstName %q, got %q", "John", person.FirstName)
+		}
+		if person.LastName != "Doe" {
+			t.Errorf("expected LastName %q, got %q", "Doe", person.LastName)
+		}
+		if person.Age != 30 {
+			t.Errorf("expected Age %d, got %d", 30, person.Age)
+		}
+
+		// Verify spouse partial data
+		if person.Spouse == nil {
+			t.Fatal("expected Spouse to not be nil")
+		}
+		if person.Spouse.ID != "person-2" {
+			t.Errorf("expected Spouse.ID %q, got %q", "person-2", person.Spouse.ID)
+		}
+		if person.Spouse.FirstName != "Jane" {
+			t.Errorf("expected Spouse.FirstName %q, got %q", "Jane", person.Spouse.FirstName)
+		}
+		// Missing fields should be zero values
+		if person.Spouse.LastName != "" {
+			t.Errorf("expected Spouse.LastName to be empty, got %q", person.Spouse.LastName)
+		}
+		if person.Spouse.Age != 0 {
+			t.Errorf("expected Spouse.Age to be 0, got %d", person.Spouse.Age)
+		}
+
+		// Verify manager with only ID
+		if person.Manager == nil {
+			t.Fatal("expected Manager to not be nil")
+		}
+		if person.Manager.ID != "person-3" {
+			t.Errorf("expected Manager.ID %q, got %q", "person-3", person.Manager.ID)
+		}
+		if person.Manager.FirstName != "" {
+			t.Errorf("expected Manager.FirstName to be empty, got %q", person.Manager.FirstName)
+		}
+
+		// Verify nested references are nil (no form data)
+		if person.Spouse.Spouse != nil {
+			t.Error("expected Spouse.Spouse to be nil")
+		}
+		if person.Spouse.Manager != nil {
+			t.Error("expected Spouse.Manager to be nil")
+		}
+		if person.Manager.Spouse != nil {
+			t.Error("expected Manager.Spouse to be nil")
+		}
+		if person.Manager.Manager != nil {
+			t.Error("expected Manager.Manager to be nil")
+		}
+	})
+
+	t.Run("correct decoding cross-referencing structs", func(t *testing.T) {
+		type LinkedNode struct {
+			ID       string
+			Value    string
+			Next     *LinkedNode
+			Previous *LinkedNode
+		}
+
+		vals := url.Values{}
+		// Node A
+		vals.Set("ID", "node-a")
+		vals.Set("Value", "A")
+
+		// Node A -> Next = Node B
+		vals.Set("Next.ID", "node-b")
+		vals.Set("Next.Value", "B")
+
+		// Node B -> Next = Node C
+		vals.Set("Next.Next.ID", "node-c")
+		vals.Set("Next.Next.Value", "C")
+
+		// Node A -> Previous = Node Z
+		vals.Set("Previous.ID", "node-z")
+		vals.Set("Previous.Value", "Z")
+
+		// Node Z -> Previous = Node Y
+		vals.Set("Previous.Previous.ID", "node-y")
+		vals.Set("Previous.Previous.Value", "Y")
+
+		req, _ := http.NewRequest("POST", "/", strings.NewReader(vals.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		var node LinkedNode
+		if err := form.Decode(req, &node); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		// Verify current node
+		if node.ID != "node-a" || node.Value != "A" {
+			t.Errorf("expected (node-a, A), got (%s, %s)", node.ID, node.Value)
+		}
+
+		// Verify forward chain
+		if node.Next == nil {
+			t.Fatal("expected Next to not be nil")
+		}
+		if node.Next.ID != "node-b" || node.Next.Value != "B" {
+			t.Errorf("expected Next (node-b, B), got (%s, %s)", node.Next.ID, node.Next.Value)
+		}
+
+		if node.Next.Next == nil {
+			t.Fatal("expected Next.Next to not be nil")
+		}
+		if node.Next.Next.ID != "node-c" || node.Next.Next.Value != "C" {
+			t.Errorf("expected Next.Next (node-c, C), got (%s, %s)", node.Next.Next.ID, node.Next.Next.Value)
+		}
+
+		// Verify backward chain
+		if node.Previous == nil {
+			t.Fatal("expected Previous to not be nil")
+		}
+		if node.Previous.ID != "node-z" || node.Previous.Value != "Z" {
+			t.Errorf("expected Previous (node-z, Z), got (%s, %s)", node.Previous.ID, node.Previous.Value)
+		}
+
+		if node.Previous.Previous == nil {
+			t.Fatal("expected Previous.Previous to not be nil")
+		}
+		if node.Previous.Previous.ID != "node-y" || node.Previous.Previous.Value != "Y" {
+			t.Errorf("expected Previous.Previous (node-y, Y), got (%s, %s)",
+				node.Previous.Previous.ID, node.Previous.Previous.Value)
+		}
+
+		// Verify chains end (no more form data)
+		if node.Next.Next.Next != nil {
+			t.Error("expected Next.Next.Next to be nil")
+		}
+		if node.Previous.Previous.Previous != nil {
+			t.Error("expected Previous.Previous.Previous to be nil")
+		}
+	})
+
+	t.Run("correct handling empty nested struct with only nested fields", func(t *testing.T) {
+		type Account struct {
+			ID      string
+			Balance float64
+			Owner   *Account
+		}
+
+		vals := url.Values{}
+		// Current account has nested owner, but no own data except nested
+		vals.Set("Owner.ID", "owner-123")
+		vals.Set("Owner.Balance", "1000.50")
+
+		req, _ := http.NewRequest("POST", "/", strings.NewReader(vals.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		var account Account
+		if err := form.Decode(req, &account); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		// Current account should have zero values
+		if account.ID != "" {
+			t.Errorf("expected ID to be empty, got %q", account.ID)
+		}
+		if account.Balance != 0.0 {
+			t.Errorf("expected Balance to be 0, got %f", account.Balance)
+		}
+
+		// Owner should be populated
+		if account.Owner == nil {
+			t.Fatal("expected Owner to not be nil")
+		}
+		if account.Owner.ID != "owner-123" {
+			t.Errorf("expected Owner.ID %q, got %q", "owner-123", account.Owner.ID)
+		}
+		if account.Owner.Balance != 1000.50 {
+			t.Errorf("expected Owner.Balance %f, got %f", 1000.50, account.Owner.Balance)
 		}
 	})
 }
