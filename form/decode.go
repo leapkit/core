@@ -22,7 +22,7 @@ func Decode(r *http.Request, dst any) error {
 	t := reflect.TypeOf(dst)
 	v := reflect.ValueOf(dst)
 
-	if t.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
+	if t.Kind() != reflect.Pointer || v.Elem().Kind() != reflect.Struct {
 		return errors.New("dst must be pointer to struct")
 	}
 
@@ -56,7 +56,7 @@ func decodeForm(dst reflect.Value, form map[string][]string, prefix string) erro
 		fName := cmp.Or(tagName, field.Name)
 		fType := field.Type
 		fKind := fType.Kind()
-		isPtr := fKind == reflect.Ptr
+		isPtr := fKind == reflect.Pointer
 
 		if prefix != "" && !field.Anonymous {
 			fName = prefix + "." + fName
@@ -68,6 +68,28 @@ func decodeForm(dst reflect.Value, form map[string][]string, prefix string) erro
 
 			if _, ok := form[fName]; !ok && fKind != reflect.Struct {
 				continue
+			}
+
+			if fKind == reflect.Struct {
+				var found bool
+
+				searchPrefix := fName
+				if field.Anonymous {
+					searchPrefix = prefix
+				}
+				if searchPrefix != "" {
+					searchPrefix += "."
+				}
+
+				for k := range form {
+					if searchPrefix == "" || strings.HasPrefix(k, searchPrefix) {
+						found = true
+						break
+					}
+				}
+				if !found {
+					continue
+				}
 			}
 
 			if fieldVal.IsNil() {
@@ -105,7 +127,7 @@ func decodeForm(dst reflect.Value, form map[string][]string, prefix string) erro
 			}
 		case reflect.Slice:
 			elemType := fType.Elem()
-			isPtr := elemType.Kind() == reflect.Ptr
+			isPtr := elemType.Kind() == reflect.Pointer
 			baseType := elemType
 			if isPtr {
 				baseType = elemType.Elem()

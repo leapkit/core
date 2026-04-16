@@ -28,6 +28,8 @@ func BenchmarkSimpleDecodeStruct(b *testing.B) {
 	req, _ := http.NewRequest(http.MethodPost, "/", strings.NewReader(values.Encode()))
 
 	b.ReportAllocs()
+	b.ResetTimer()
+
 	for n := 0; n < b.N; n++ {
 		var s Simple
 
@@ -80,9 +82,44 @@ func BenchmarkComplexDecodeStruct(b *testing.B) {
 	req, _ := http.NewRequest(http.MethodPost, "/", strings.NewReader(values.Encode()))
 
 	b.ReportAllocs()
+	b.ResetTimer()
+
 	for n := 0; n < b.N; n++ {
 		var c Complex
 		if err := form.Decode(req, &c); err != nil {
+			b.Error(err)
+		}
+	}
+}
+
+func BenchmarkSelfReferencingStruct(b *testing.B) {
+	type Node struct {
+		ID       string
+		Name     string
+		Parent   *Node
+		Sibling  *Node
+		Metadata map[string]string
+	}
+
+	values := url.Values{
+		"ID":                 []string{"node-1"},
+		"Name":               []string{"Root Node"},
+		"Parent.ID":          []string{"parent-1"},
+		"Parent.Name":        []string{"Parent Node"},
+		"Sibling.ID":         []string{"sibling-1"},
+		"Sibling.Name":       []string{"Sibling Node"},
+		"Metadata[category]": []string{"test"},
+		"Metadata[version]":  []string{"1.0"},
+	}
+
+	req, _ := http.NewRequest(http.MethodPost, "/", strings.NewReader(values.Encode()))
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		var node Node
+		if err := form.Decode(req, &node); err != nil {
 			b.Error(err)
 		}
 	}
